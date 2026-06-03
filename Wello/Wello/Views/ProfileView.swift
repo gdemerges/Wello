@@ -15,7 +15,8 @@ struct ProfileView: View {
                 if let profil {
                     Section {
                         Stepper(value: Binding(get: { profil.weightKg },
-                                               set: { profil.weightKg = $0; profil.updatedAt = .now }),
+                                               set: { profil.weightKg = $0; profil.updatedAt = .now
+                                                      Task { await store.refreshToday(force: true) } }),
                                 in: 30...250, step: 0.5) {
                             label("Poids", String(format: "%.1f kg", profil.weightKg), icon: "scalemass.fill", teinte: WelloTheme.accent)
                         }
@@ -23,7 +24,8 @@ struct ProfileView: View {
 
                     Section {
                         Stepper(value: Binding(get: { profil.medicalFloorML },
-                                               set: { profil.medicalFloorML = min($0, 4000); profil.updatedAt = .now }),
+                                               set: { profil.medicalFloorML = min($0, 4000); profil.updatedAt = .now
+                                                      Task { await store.refreshToday(force: true) } }),
                                 in: 1000...4000, step: 100) {
                             label("Plancher médical", "\(profil.medicalFloorML) ml", icon: "cross.case.fill", teinte: .pink)
                         }

@@ -33,8 +33,21 @@ final class HydrationStore {
     private(set) var météoIndisponible = false
     /// État effectif des services, rafraîchi à chaque `refreshToday()`.
     private(set) var étatServices = ÉtatServices()
-    /// Cache météo du jour (≤ 30 min) pour limiter les appels Open-Meteo.
+    /// Cache météo du jour (≤ 30 min) en mémoire ; doublé d'un cache persistant (UserDefaults).
     private var météoCache: (snapshot: WeatherSnapshot, capturéeÀ: Date)?
+    /// Dernier recalcul réussi : sert à throttler les rafraîchissements redondants.
+    private var dernierRefresh: Date?
+    /// L'autorisation HealthKit n'est demandée qu'une fois par session.
+    private var autorisationDemandée = false
+
+    private enum Clés {
+        static let météoRessentie = "wello.meteo.ressentieC"
+        static let météoDate = "wello.meteo.capturéeA"
+    }
+
+    /// Fenêtre de throttle du recalcul et de validité du cache météo.
+    private static let fenêtreRefresh: TimeInterval = 600    // 10 min
+    private static let fenêtreMétéo: TimeInterval = 1800     // 30 min
 
     init(modelContext: ModelContext,
          healthKit: HealthKitServicing,
@@ -61,10 +74,24 @@ final class HydrationStore {
 
     /// Recalcule l'objectif du jour à partir du poids, de l'effort et de la météo (best-effort),
     /// puis met à jour (upsert) le DailyGoal du jour. Replanifie les rappels.
-    func refreshToday() async {
+    /// Recalcule l'objectif du jour. Throttlé : on évite les recalculs redondants si le dernier
+    /// date de moins de 10 min (même jour). `force` (action explicite : onboarding, toggle rappels)
+    /// court-circuite le throttle.
+    func refreshToday(force: Bool = false) async {
+        if !force, let dernier = dernierRefresh,
+           Date.now.timeIntervalSince(dernier) < Self.fenêtreRefresh,
+           Calendar.current.isDate(dernier, inSameDayAs: .now) {
+            return
+        }
+        dernierRefresh = .now
+
         let profil = profilCourant()
 
-        await healthKit.requestAuthorization()
+        // Demande d'autorisation HealthKit une seule fois par session (inutile ensuite).
+        if !autorisationDemandée {
+            await healthKit.requestAuthorization()
+            autorisationDemandée = true
+        }
         let énergie = await healthKit.énergieActiveDuJour()
         let poidsHK = await healthKit.dernierPoids()
         let poids = résoudrePoids(healthKitKg: poidsHK, profilKg: profil.weightKg)
@@ -93,17 +120,39 @@ final class HydrationStore {
         }
     }
 
-    /// Météo du jour avec cache (≤ 30 min, même jour) pour limiter les appels réseau.
+    /// Météo du jour avec cache (≤ 30 min, même jour) en mémoire ET persistant : évite un fix GPS
+    /// + un appel réseau même au démarrage à froid si on a relevé la météo récemment.
     private func météoActuelle() async -> (snapshot: WeatherSnapshot?, localisationOK: Bool) {
-        if let cache = météoCache,
-           Date.now.timeIntervalSince(cache.capturéeÀ) < 1800,
-           Calendar.current.isDate(cache.capturéeÀ, inSameDayAs: .now) {
-            return (cache.snapshot, true)
-        }
+        if let snap = météoCachéeValide() { return (snap, true) }
         guard let coords = await location.coordonnéesActuelles() else { return (nil, false) }
         let snapshot = await weather.météoDuJour(latitude: coords.latitude, longitude: coords.longitude)
-        if let snapshot { météoCache = (snapshot, .now) }
+        if let snapshot { mémoriserMétéo(snapshot) }
         return (snapshot, true)
+    }
+
+    /// Cache météo valide (mémoire en priorité, puis UserDefaults), ou nil si périmé/absent.
+    private func météoCachéeValide() -> WeatherSnapshot? {
+        if let cache = météoCache, météoFraîche(cache.capturéeÀ) { return cache.snapshot }
+        let d = UserDefaults.standard
+        if let capturée = d.object(forKey: Clés.météoDate) as? Date, météoFraîche(capturée) {
+            let snap = WeatherSnapshot(apparentTemperatureC: d.double(forKey: Clés.météoRessentie))
+            météoCache = (snap, capturée)   // réhydrate le cache mémoire
+            return snap
+        }
+        return nil
+    }
+
+    private func météoFraîche(_ date: Date) -> Bool {
+        Date.now.timeIntervalSince(date) < Self.fenêtreMétéo
+            && Calendar.current.isDate(date, inSameDayAs: .now)
+    }
+
+    private func mémoriserMétéo(_ snap: WeatherSnapshot) {
+        let maintenant = Date.now
+        météoCache = (snap, maintenant)
+        let d = UserDefaults.standard
+        d.set(snap.apparentTemperatureC, forKey: Clés.météoRessentie)
+        d.set(maintenant, forKey: Clés.météoDate)
     }
 
     /// Importe les prises d'eau saisies hors Wello (Watch, autres apps) en HydrationLog,

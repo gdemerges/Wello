@@ -19,7 +19,7 @@ struct RootView: View {
                                               set: { hasOnboarded = !$0 })) {
             OnboardingView {
                 hasOnboarded = true
-                Task { await store.refreshToday() }   // déclenche les demandes d'autorisation
+                Task { await store.refreshToday(force: true) }   // déclenche les demandes d'autorisation
             }
         }
     }

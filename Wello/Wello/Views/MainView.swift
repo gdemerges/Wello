@@ -78,7 +78,7 @@ struct MainView: View {
                     Button {
                         Task {
                             if rappelsCoupésAujourdhui {
-                                await store.refreshToday()          // réactive et replanifie
+                                await store.refreshToday(force: true)   // réactive et replanifie
                             } else {
                                 await store.couperRappelsAujourdhui()
                             }
