@@ -37,4 +37,42 @@ struct HydrationCalculatorTests {
         #expect(r.activityBonusML == 1000)
         #expect(r.totalML == 3800)           // 2800 + 1000
     }
+
+    @Test("Météo absente (nil) → bonus 0, calcul OK")
+    func météoAbsente() {
+        let inputs = CalculatorInputs(weightKg: 80, effortMinutes: 0, weather: nil, medicalFloorML: 2000)
+        let r = calc.calculate(inputs)
+        #expect(r.weatherBonusML == 0)
+        #expect(r.totalML == 2800)
+    }
+
+    @Test("Température > 28°C → +300")
+    func bonusTempSeule() {
+        let w = WeatherSnapshot(temperatureC: 30, humidityPct: 50)
+        let inputs = CalculatorInputs(weightKg: 80, effortMinutes: 0, weather: w, medicalFloorML: 2000)
+        #expect(calc.calculate(inputs).weatherBonusML == 300)
+    }
+
+    @Test("Humidité > 70% → +200")
+    func bonusHumiditéSeule() {
+        let w = WeatherSnapshot(temperatureC: 20, humidityPct: 80)
+        let inputs = CalculatorInputs(weightKg: 80, effortMinutes: 0, weather: w, medicalFloorML: 2000)
+        #expect(calc.calculate(inputs).weatherBonusML == 200)
+    }
+
+    @Test("Chaud ET humide → +500")
+    func bonusMétéoCombiné() {
+        let w = WeatherSnapshot(temperatureC: 30, humidityPct: 80)
+        let inputs = CalculatorInputs(weightKg: 80, effortMinutes: 0, weather: w, medicalFloorML: 2000)
+        let r = calc.calculate(inputs)
+        #expect(r.weatherBonusML == 500)
+        #expect(r.totalML == 3300)
+    }
+
+    @Test("Seuils stricts : exactement 28°C / 70% ne déclenchent pas")
+    func seuilsStricts() {
+        let w = WeatherSnapshot(temperatureC: 28, humidityPct: 70)
+        let inputs = CalculatorInputs(weightKg: 80, effortMinutes: 0, weather: w, medicalFloorML: 2000)
+        #expect(calc.calculate(inputs).weatherBonusML == 0)
+    }
 }
