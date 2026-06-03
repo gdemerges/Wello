@@ -56,18 +56,20 @@ struct ProfileView: View {
                             .font(.system(.caption, design: .rounded))
                     }
 
-                    Section {
-                        diagLigne("Santé (poids)", ok: store.étatServices.poidsDepuisSanté,
-                                  détailKO: "poids depuis le profil")
-                        diagLigne("Localisation / météo", ok: store.étatServices.météoDisponible,
-                                  détailKO: "bonus météo à 0")
-                        diagLigne("Notifications", ok: store.étatServices.notificationsAutorisées,
-                                  détailKO: "rappels indisponibles")
-                    } header: {
-                        Text("Diagnostic")
-                    } footer: {
-                        Text("Ce qui a fonctionné au dernier calcul. Tout refus est géré : l'app reste utilisable.")
-                            .font(.system(.caption, design: .rounded))
+                    if !store.étatServices.tousOK {
+                        Section {
+                            diagLigne("Santé (poids)", ok: store.étatServices.poidsDepuisSanté,
+                                      détailKO: "poids depuis le profil")
+                            diagLigne("Localisation / météo", ok: store.étatServices.météoDisponible,
+                                      détailKO: "bonus météo à 0")
+                            diagLigne("Notifications", ok: store.étatServices.notificationsAutorisées,
+                                      détailKO: "rappels indisponibles")
+                        } header: {
+                            Text("Diagnostic")
+                        } footer: {
+                            Text("Certains services ne sont pas actifs. Tout refus est géré : l'app reste pleinement utilisable.")
+                                .font(.system(.caption, design: .rounded))
+                        }
                     }
                 }
             }

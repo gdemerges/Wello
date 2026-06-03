@@ -10,6 +10,9 @@ struct ÉtatServices: Sendable {
     var localisationDisponible = false
     var météoDisponible = false
     var notificationsAutorisées = false
+
+    /// Tout fonctionne : on masque alors le diagnostic.
+    var tousOK: Bool { poidsDepuisSanté && météoDisponible && notificationsAutorisées }
 }
 
 /// Orchestrateur central : calcule/rafraîchit l'objectif du jour et enregistre les prises d'eau.
@@ -170,6 +173,19 @@ final class HydrationStore {
         modelContext.delete(dernière)
         await healthKit.supprimerEau(ml: ml, date: date)
 
+        if let objectif = breakdown?.totalML {
+            await notifications.planifierRappels(objectifML: objectif, consomméML: consomméAujourdhui())
+        }
+    }
+
+    /// Supprime une prise précise (depuis le détail d'un jour) : SwiftData + Santé (si saisie
+    /// dans Wello) + replanification des rappels.
+    func supprimer(_ log: HydrationLog) async {
+        let ml = log.amountML
+        let date = log.loggedAt
+        let estApp = log.source == "app"
+        modelContext.delete(log)
+        if estApp { await healthKit.supprimerEau(ml: ml, date: date) }
         if let objectif = breakdown?.totalML {
             await notifications.planifierRappels(objectifML: objectif, consomméML: consomméAujourdhui())
         }

@@ -34,15 +34,9 @@ struct MainView: View {
                         ForEach(Array(montants.enumerated()), id: \.offset) { _, ml in
                             WaterLogButton(ml: ml) { await store.log(ml: ml) }
                         }
+                        WaterMorePill { afficheSaisie = true }
                     }
                     .padding(.horizontal)
-
-                    Button { afficheSaisie = true } label: {
-                        Label("Autre quantité", systemImage: "slider.horizontal.3")
-                            .font(.system(.subheadline, design: .rounded).weight(.medium))
-                            .foregroundStyle(WelloTheme.accentDeep)
-                    }
-                    .buttonStyle(.plain)
 
                     if let dernière = logsDuJour.first {
                         Button {

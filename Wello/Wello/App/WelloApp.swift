@@ -31,17 +31,9 @@ struct WelloApp: App {
 
     var body: some Scene {
         WindowGroup {
-            TabView {
-                MainView()
-                    .tabItem { Label("Aujourd'hui", systemImage: "drop.fill") }
-                HistoryView()
-                    .tabItem { Label("Historique", systemImage: "calendar") }
-                ProfileView()
-                    .tabItem { Label("Profil", systemImage: "person.fill") }
-            }
-            .tint(WelloTheme.accent)
-            .environment(\.locale, Locale(identifier: "fr_FR"))   // app francophone : dates/nombres en FR
-            .environment(store)
+            RootView()
+                .environment(\.locale, Locale(identifier: "fr_FR"))   // app francophone : dates/nombres en FR
+                .environment(store)
         }
         .modelContainer(container)
     }

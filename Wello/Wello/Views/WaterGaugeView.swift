@@ -57,6 +57,8 @@ struct WaterGaugeView: View {
                     .font(.system(size: 52, weight: .bold, design: .rounded))
                     .foregroundStyle(WelloTheme.ink)
                     .contentTransition(.numericText())
+                    .minimumScaleFactor(0.6)
+                    .lineLimit(1)
                 Text("/ \(objectifML) ml")
                     .font(.system(.callout, design: .rounded).weight(.medium))
                     .foregroundStyle(WelloTheme.inkSoft)
@@ -72,7 +74,8 @@ struct WaterGaugeView: View {
                 phase = .pi * 2
             }
         }
-        .animation(.easeInOut(duration: 0.7), value: progress)
+        // Montée « ressort » du niveau d'eau à chaque ajout.
+        .animation(.spring(response: 0.8, dampingFraction: 0.82), value: progress)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Hydratation du jour")
         .accessibilityValue("\(consomméML) millilitres sur \(objectifML), \(pourcentage) pour cent")

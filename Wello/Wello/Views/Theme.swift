@@ -93,9 +93,10 @@ struct WaterLogButton: View {
         } label: {
             VStack(spacing: 4) {
                 Image(systemName: "drop.fill").font(.system(size: 15))
-                Text("+\(ml)").font(.system(.headline, design: .rounded))
+                Text("+\(ml)").font(.system(.headline, design: .rounded)).minimumScaleFactor(0.7).lineLimit(1)
             }
             .foregroundStyle(.white)
+            .shadow(color: .black.opacity(0.18), radius: 1, y: 1)   // lisibilité sur fond clair (clair/sombre)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
             .background(WelloTheme.waterGradient,            // plus clair au repos
@@ -103,6 +104,26 @@ struct WaterLogButton: View {
             .brightness(enfoncé ? -0.14 : 0)                 // s'assombrit le temps de la pulsation
             .scaleEffect(enfoncé ? 0.92 : 1)
             .shadow(color: WelloTheme.accent.opacity(0.35), radius: 8, y: 4)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// Pastille « Autre » (contour) assortie aux WaterLogButton : ouvre la saisie ponctuelle.
+struct WaterMorePill: View {
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Image(systemName: "slider.horizontal.3").font(.system(size: 15))
+                Text("Autre").font(.system(.headline, design: .rounded))
+            }
+            .foregroundStyle(WelloTheme.accentDeep)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .background(WelloTheme.card, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(WelloTheme.accent.opacity(0.35), lineWidth: 1.5))
         }
         .buttonStyle(.plain)
     }
