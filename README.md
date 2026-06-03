@@ -88,6 +88,24 @@ Pattern « MV » : pas de ViewModels ; les vues utilisent `@Query` SwiftData et 
 `HydrationStore` `@Observable` injecté via l'environnement. Services derrière des protocoles
 (mocks fournis pour les previews).
 
+## Accessibilité
+
+- **VoiceOver** : la jauge expose une valeur lisible (« X ml sur Y, Z % ») ; les boutons d'eau
+  annoncent « Ajouter N millilitres » ; chaque barre du graphe d'historique porte sa date et son
+  taux d'atteinte ; les icônes décoratives sont masquées au lecteur d'écran.
+- **Annonces** : l'atteinte de l'objectif déclenche une annonce VoiceOver, en plus de la bannière
+  visuelle et du retour haptique.
+- **Dynamic Type** : l'app utilise des styles typographiques qui s'adaptent ; les quelques tailles
+  d'affichage fixes (compteur de la jauge, wordmark, illustrations d'onboarding) suivent les
+  réglages via `@ScaledMetric`, avec repli `minimumScaleFactor` pour éviter la troncature.
+- **Reduce Motion** : si l'option iOS est activée, la vague de la jauge reste dessinée mais cesse
+  d'onduler, les montées de niveau deviennent instantanées et les animations « ressort »
+  (célébration, pulsation des boutons) sont neutralisées — sans rien retirer aux autres
+  utilisateurs.
+- **Contraste & couleur** : retour haptique et libellés texte doublent l'information portée par la
+  couleur (objectif atteint, états du diagnostic) ; ombre de lisibilité sur le texte des boutons
+  d'eau en clair comme en sombre. Zones tactiles ≥ 44 pt.
+
 ## Hors périmètre (Phase 1)
 
 watchOS, Widget iOS, complication Watch — prévus en Phase 2. Le découpage services/calculateur

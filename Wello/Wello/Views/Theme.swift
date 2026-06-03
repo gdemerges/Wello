@@ -81,6 +81,7 @@ struct WaterLogButton: View {
     let ml: Int
     let action: () async -> Void
     @State private var enfoncé = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         Button {
@@ -102,10 +103,11 @@ struct WaterLogButton: View {
             .background(WelloTheme.waterGradient,            // plus clair au repos
                         in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             .brightness(enfoncé ? -0.14 : 0)                 // s'assombrit le temps de la pulsation
-            .scaleEffect(enfoncé ? 0.92 : 1)
+            .scaleEffect(enfoncé && !reduceMotion ? 0.92 : 1) // pas de scale si Reduce Motion
             .shadow(color: WelloTheme.accent.opacity(0.35), radius: 8, y: 4)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Ajouter \(ml) millilitres")
     }
 }
 
@@ -126,12 +128,14 @@ struct WaterMorePill: View {
                 .strokeBorder(WelloTheme.accent.opacity(0.35), lineWidth: 1.5))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Ajouter une autre quantité")
     }
 }
 
 /// Logo-texte « Wello » : goutte + mot rempli du dégradé eau, police arrondie lourde.
 struct WelloWordmark: View {
-    var size: CGFloat = 22
+    /// Taille suivant Dynamic Type (relative à Title 3).
+    @ScaledMetric(relativeTo: .title3) private var size: CGFloat = 22
     var body: some View {
         HStack(spacing: 5) {
             Image(systemName: "drop.fill")

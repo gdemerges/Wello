@@ -5,6 +5,8 @@ struct OnboardingView: View {
     /// Appelé au tap final « Commencer ».
     let onTerminé: () -> Void
     @State private var page = 0
+    /// Taille de l'illustration suivant Dynamic Type.
+    @ScaledMetric(relativeTo: .largeTitle) private var tailleIcône: CGFloat = 72
 
     private struct Page { let icon: String; let titre: String; let texte: String }
     private let pages = [
@@ -54,8 +56,9 @@ struct OnboardingView: View {
     private func pageVue(_ p: Page) -> some View {
         VStack(spacing: 22) {
             Image(systemName: p.icon)
-                .font(.system(size: 72, weight: .semibold))
+                .font(.system(size: tailleIcône, weight: .semibold))
                 .foregroundStyle(WelloTheme.accentGradient)
+                .accessibilityHidden(true)   // décorative : le titre/texte porte le sens
             Text(p.titre)
                 .font(.system(.title, design: .rounded).weight(.bold))
                 .foregroundStyle(WelloTheme.ink)

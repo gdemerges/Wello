@@ -80,6 +80,8 @@ struct HistoryView: View {
                         )
                         .foregroundStyle(jour.atteint ? Color.green : WelloTheme.accent)
                         .cornerRadius(4)
+                        .accessibilityLabel(jour.date.formatted(.dateTime.weekday(.wide).day().month()))
+                        .accessibilityValue("\(jour.consommé) sur \(jour.objectif) millilitres, \(Int((jour.ratio * 100).rounded())) pour cent, \(jour.atteint ? "objectif atteint" : "objectif non atteint")")
                     }
                     RuleMark(y: .value("Objectif", 1.0))
                         .foregroundStyle(WelloTheme.inkSoft.opacity(0.55))

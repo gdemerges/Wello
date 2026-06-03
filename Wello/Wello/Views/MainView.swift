@@ -6,6 +6,7 @@ import WelloKit
 struct MainView: View {
     @Environment(HydrationStore.self) private var store
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Tous les logs (tri récent→ancien) ; on filtre « aujourd'hui » à l'affichage pour rester
     /// correct au passage de minuit sans prédicat figé à l'init.
     @Query(sort: \HydrationLog.loggedAt, order: .reverse) private var tousLogs: [HydrationLog]
@@ -45,6 +46,8 @@ struct MainView: View {
                             Label("Annuler la dernière prise (+\(dernière.amountML) ml)",
                                   systemImage: "arrow.uturn.backward")
                                 .font(.system(.subheadline, design: .rounded))
+                                .frame(minHeight: 44)
+                                .contentShape(Rectangle())
                         }
                         .foregroundStyle(WelloTheme.inkSoft)
                     }
@@ -118,12 +121,14 @@ struct MainView: View {
                 .background(WelloTheme.accentGradient, in: Capsule())
                 .shadow(color: WelloTheme.accent.opacity(0.4), radius: 10, y: 4)
                 .padding(.top, 8)
-                .transition(.move(edge: .top).combined(with: .opacity))
+                .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
         }
     }
 
     private func déclencherFête() {
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { fête = true }
+        AccessibilityNotification.Announcement("Objectif d'hydratation atteint").post()
+        let apparition: Animation = reduceMotion ? .easeInOut(duration: 0.25) : .spring(response: 0.4, dampingFraction: 0.7)
+        withAnimation(apparition) { fête = true }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(2.5))
             withAnimation(.easeOut(duration: 0.5)) { fête = false }

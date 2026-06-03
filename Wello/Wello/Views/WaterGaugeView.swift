@@ -34,6 +34,9 @@ struct WaterGaugeView: View {
     let consomméML: Int
     let objectifML: Int
     @State private var phase = 0.0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Taille du compteur suivant Dynamic Type (bornée par minimumScaleFactor côté affichage).
+    @ScaledMetric(relativeTo: .largeTitle) private var tailleNombre: CGFloat = 52
 
     private var progress: Double {
         guard objectifML > 0 else { return 0 }
@@ -54,7 +57,7 @@ struct WaterGaugeView: View {
 
             VStack(spacing: 2) {
                 Text("\(consomméML)")
-                    .font(.system(size: 52, weight: .bold, design: .rounded))
+                    .font(.system(size: tailleNombre, weight: .bold, design: .rounded))
                     .foregroundStyle(WelloTheme.ink)
                     .contentTransition(.numericText())
                     .minimumScaleFactor(0.6)
@@ -70,12 +73,14 @@ struct WaterGaugeView: View {
         }
         .frame(width: 250, height: 250)
         .onAppear {
+            // Vague figée (mais toujours dessinée) si Reduce Motion est actif.
+            guard !reduceMotion else { return }
             withAnimation(.linear(duration: 2.4).repeatForever(autoreverses: false)) {
                 phase = .pi * 2
             }
         }
-        // Montée « ressort » du niveau d'eau à chaque ajout.
-        .animation(.spring(response: 0.8, dampingFraction: 0.82), value: progress)
+        // Montée « ressort » du niveau d'eau à chaque ajout ; instantanée si Reduce Motion.
+        .animation(reduceMotion ? nil : .spring(response: 0.8, dampingFraction: 0.82), value: progress)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Hydratation du jour")
         .accessibilityValue("\(consomméML) millilitres sur \(objectifML), \(pourcentage) pour cent")
