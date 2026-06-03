@@ -76,6 +76,26 @@ struct HydrationCalculatorTests {
         #expect(calc.calculate(inputs).weatherBonusML == 0)
     }
 
+    @Test("physiologicalML = base + activité + météo, indépendant du plancher")
+    func besoinPhysiologique() {
+        // 60 kg → 2100 base ; le plancher 2500 relève le total, mais le besoin
+        // physiologique reste 2100 (le plancher n'est pas un terme additionné).
+        let w = WeatherSnapshot(temperatureC: 30, humidityPct: 80)   // +500
+        let inputs = CalculatorInputs(weightKg: 60, effortMinutes: 30, weather: w, medicalFloorML: 2500)
+        let r = calc.calculate(inputs)
+        #expect(r.physiologicalML == 2930)   // 2100 + 330 + 500
+        #expect(r.totalML == 2930)           // > plancher 2500, donc le physiologique gagne
+    }
+
+    @Test("physiologicalML reste sous le total quand le plancher contraint")
+    func physiologiqueSousPlancher() {
+        // 50 kg → 1750 base, rien d'autre ; plancher 2500 relève le total.
+        let inputs = CalculatorInputs(weightKg: 50, effortMinutes: 0, weather: nil, medicalFloorML: 2500)
+        let r = calc.calculate(inputs)
+        #expect(r.physiologicalML == 1750)
+        #expect(r.totalML == 2500)
+    }
+
     @Test("Plancher médical relève l'objectif quand le physiologique est plus bas")
     func plancherContraignant() {
         // 60 kg → 2100 base ; plancher 2500 doit gagner.

@@ -12,6 +12,10 @@ public struct GoalBreakdown: Sendable, Equatable {
     /// Vrai si l'objectif a été bridé au plafond de sécurité (anti-hyperhydratation).
     public let plafondAppliqué: Bool
 
+    /// Besoin physiologique = somme des termes additionnés (base + activité + météo).
+    /// Distinct du plancher médical, qui est un seuil (max) et non un terme.
+    public var physiologicalML: Int { baseML + activityBonusML + weatherBonusML }
+
     public init(baseML: Int, activityBonusML: Int, weatherBonusML: Int, medicalFloorML: Int,
                 totalML: Int, plancherContraignant: Bool, plafondAppliqué: Bool) {
         self.baseML = baseML
