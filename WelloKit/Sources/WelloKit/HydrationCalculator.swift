@@ -5,7 +5,10 @@ public struct HydrationCalculator: Sendable {
     /// Constantes médicales/algorithmiques nommées (cf. spec).
     public enum Constantes {
         public static let mlParKg = 35.0
-        public static let mlParMinEffort = 11
+        /// ml d'eau par kcal d'énergie active. Base scientifique : évaporer 1 mL de sueur
+        /// dissipe ~0,58 kcal ; à l'effort ~75-80 % de l'énergie devient chaleur, dissipée
+        /// majoritairement par la sueur → ~1 mL/kcal (coefficient conservateur).
+        public static let mlParKcal = 1.0
         public static let plafondActivité = 1000
         public static let seuilTempC = 28.0
         public static let bonusTemp = 300
@@ -20,7 +23,7 @@ public struct HydrationCalculator: Sendable {
     public func calculate(_ inputs: CalculatorInputs) -> GoalBreakdown {
         let base = Int((inputs.weightKg * Constantes.mlParKg).rounded())
 
-        let activité = min(inputs.effortMinutes * Constantes.mlParMinEffort, Constantes.plafondActivité)
+        let activité = min(Int((inputs.activeEnergyKcal * Constantes.mlParKcal).rounded()), Constantes.plafondActivité)
 
         let météo = bonusMétéo(inputs.weather)
 

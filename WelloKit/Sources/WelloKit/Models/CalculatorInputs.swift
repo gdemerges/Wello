@@ -2,13 +2,15 @@
 /// si la météo est indisponible (réseau/API down), le bonus météo vaut 0.
 public struct CalculatorInputs: Sendable, Equatable {
     public let weightKg: Double
-    public let effortMinutes: Int
+    /// Énergie active brûlée à l'effort aujourd'hui (kcal), issue de HealthKit.
+    /// Proxy physiologique de la perte sudorale (intensité, pas seulement durée).
+    public let activeEnergyKcal: Double
     public let weather: WeatherSnapshot?
     public let medicalFloorML: Int
 
-    public init(weightKg: Double, effortMinutes: Int, weather: WeatherSnapshot?, medicalFloorML: Int) {
+    public init(weightKg: Double, activeEnergyKcal: Double, weather: WeatherSnapshot?, medicalFloorML: Int) {
         self.weightKg = weightKg
-        self.effortMinutes = effortMinutes
+        self.activeEnergyKcal = activeEnergyKcal
         self.weather = weather
         self.medicalFloorML = medicalFloorML
     }

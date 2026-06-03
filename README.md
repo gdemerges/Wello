@@ -41,7 +41,7 @@ cd WelloKit && swift test
 Activer la capability **HealthKit** sur le target (Signing & Capabilities ▸ + Capability ▸
 HealthKit), et renseigner dans l'Info.plist du target :
 
-- `NSHealthShareUsageDescription` — lecture des séances et du poids.
+- `NSHealthShareUsageDescription` — lecture des séances, de l'énergie active et du poids.
 - `NSHealthUpdateUsageDescription` — écriture des prises d'eau dans Santé.app.
 - `NSLocationWhenInUseUsageDescription` — localisation pour la météo locale.
 
@@ -53,7 +53,7 @@ pas de rappels).
 
 ```
 base          = poids (kg) × 35
-activité      = min(minutes d'effort × 11, 1000)        // plafonné
+activité      = min(énergie active kcal × 1, 1000)      // 1 ml/kcal (HealthKit), plafonné
 météo         = (temp > 28°C ? +300) + (humidité > 70% ? +200)   // 0 si météo indisponible
 physiologique = base + activité + météo
 total         = min(4000, max(plancher médical, physiologique))
@@ -61,6 +61,11 @@ total         = min(4000, max(plancher médical, physiologique))
 
 Le plancher médical n'est jamais sous-estimé ; l'objectif affiché est plafonné à **4000 ml**
 (sécurité anti-hyperhydratation).
+
+Le bonus d'activité dérive de l'**énergie active brûlée** (kcal, HealthKit) plutôt que de la
+seule durée : la perte sudorale à l'effort est proportionnelle à la chaleur métabolique
+produite. Évaporer 1 mL de sueur dissipe ~0,58 kcal et l'essentiel de l'énergie d'exercice
+devient chaleur → **~1 mL d'eau par kcal** (coefficient conservateur, plafonné à 1000 ml).
 
 ## Où ajuster le plancher médical
 

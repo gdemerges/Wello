@@ -12,23 +12,21 @@ final class HealthKitService: HealthKitServicing, @unchecked Sendable {
     private let workoutType = HKObjectType.workoutType()
     private let bodyMassType = HKQuantityType(.bodyMass)
     private let waterType = HKQuantityType(.dietaryWater)
+    private let energyType = HKQuantityType(.activeEnergyBurned)
 
     func requestAuthorization() async {
         guard HKHealthStore.isHealthDataAvailable() else { return }
-        // Eau aussi en lecture : nécessaire pour requêter puis supprimer nos échantillons.
-        let read: Set<HKObjectType> = [workoutType, bodyMassType, waterType]
+        // Eau aussi en lecture (requête/suppression de nos échantillons) ; énergie active
+        // pour estimer la perte sudorale à l'effort.
+        let read: Set<HKObjectType> = [workoutType, bodyMassType, waterType, energyType]
         let write: Set<HKSampleType> = [waterType]
         try? await store.requestAuthorization(toShare: write, read: read)
     }
 
-    func minutesEffortDuJour() async -> Int {
-        let début = Calendar.current.startOfDay(for: .now)
-        return await minutesEffortDepuis(début)
-    }
-
-    func minutesEffortDepuis(_ date: Date) async -> Int {
+    func énergieActiveDuJour() async -> Double {
         guard HKHealthStore.isHealthDataAvailable() else { return 0 }
-        let prédicat = HKQuery.predicateForSamples(withStart: date, end: .now)
+        let début = Calendar.current.startOfDay(for: .now)
+        let prédicat = HKQuery.predicateForSamples(withStart: début, end: .now)
         let workouts: [HKWorkout] = await withCheckedContinuation { cont in
             let q = HKSampleQuery(sampleType: workoutType, predicate: prédicat,
                                   limit: HKObjectQueryNoLimit, sortDescriptors: nil) { _, samples, _ in
@@ -36,8 +34,14 @@ final class HealthKitService: HealthKitServicing, @unchecked Sendable {
             }
             store.execute(q)
         }
-        let secondes = workouts.reduce(0) { $0 + $1.duration }
-        return Int(secondes / 60)
+        // Énergie active de chaque séance ; à défaut (séance sans énergie enregistrée),
+        // estimation depuis la durée à intensité modérée (~7 kcal/min).
+        return workouts.reduce(0.0) { somme, w in
+            if let kcal = w.statistics(for: energyType)?.sumQuantity()?.doubleValue(for: .kilocalorie()) {
+                return somme + kcal
+            }
+            return somme + (w.duration / 60.0) * 7.0
+        }
     }
 
     func dernierWorkoutTerminé() async -> Date? {

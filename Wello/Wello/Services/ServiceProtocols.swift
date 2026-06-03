@@ -10,10 +10,10 @@ struct PriseEauExterne: Sendable, Identifiable {
 
 /// Lecture/écriture HealthKit. Toutes les opérations dégradent gracieusement si refusé.
 protocol HealthKitServicing: Sendable {
-    /// Demande les autorisations (lecture workouts+poids, écriture eau). Sans effet si déjà décidé.
+    /// Demande les autorisations (lecture workouts+poids+énergie, écriture eau). Sans effet si déjà décidé.
     func requestAuthorization() async
-    /// Minutes d'effort cumulées des workouts du jour. 0 si indisponible/refusé.
-    func minutesEffortDuJour() async -> Int
+    /// Énergie active (kcal) brûlée en séances aujourd'hui. 0 si indisponible/refusé.
+    func énergieActiveDuJour() async -> Double
     /// Dernier poids connu en kg, ou nil si indisponible/refusé.
     func dernierPoids() async -> Double?
     /// Écrit une prise d'eau dans Santé.app. No-op si refusé.
@@ -24,8 +24,6 @@ protocol HealthKitServicing: Sendable {
     /// Prises d'eau (dietaryWater) enregistrées depuis `date` par d'AUTRES sources que Wello
     /// (Apple Watch, autres apps). Sert à importer l'eau saisie ailleurs. Vide si refusé.
     func prisesEauExternes(depuis date: Date) async -> [PriseEauExterne]
-    /// Durée totale (minutes) des workouts terminés depuis `date`. Sert au rappel post-séance.
-    func minutesEffortDepuis(_ date: Date) async -> Int
     /// Date de fin du workout le plus récent, ou nil. Sert à détecter une séance fraîchement terminée.
     func dernierWorkoutTerminé() async -> Date?
 }

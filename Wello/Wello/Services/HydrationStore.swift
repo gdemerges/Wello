@@ -62,14 +62,14 @@ final class HydrationStore {
         let profil = profilCourant()
 
         await healthKit.requestAuthorization()
-        let effort = await healthKit.minutesEffortDuJour()
+        let énergie = await healthKit.énergieActiveDuJour()
         let poidsHK = await healthKit.dernierPoids()
         let poids = résoudrePoids(healthKitKg: poidsHK, profilKg: profil.weightKg)
 
         let (snapshot, localisationOK) = await météoActuelle()
         météoIndisponible = (snapshot == nil)
 
-        let inputs = CalculatorInputs(weightKg: poids, effortMinutes: effort,
+        let inputs = CalculatorInputs(weightKg: poids, activeEnergyKcal: énergie,
                                       weather: snapshot, medicalFloorML: profil.medicalFloorML)
         let resultat = calculator.calculate(inputs)
         breakdown = resultat
