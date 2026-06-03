@@ -1,10 +1,10 @@
-import Foundation
-
 /// Résultat détaillé du calcul, pour affichage du breakdown dans l'UI.
 public struct GoalBreakdown: Sendable, Equatable {
     public let baseML: Int
     public let activityBonusML: Int
     public let weatherBonusML: Int
+    /// Plancher médical, repris des entrées : volontaire, pour que le breakdown soit
+    /// autonome (affichage UI + persistance du DailyGoal sans relire les entrées).
     public let medicalFloorML: Int
     public let totalML: Int
     /// Vrai si le plancher médical a relevé l'objectif au-dessus du besoin physiologique.

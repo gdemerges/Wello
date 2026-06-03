@@ -100,6 +100,7 @@ struct HydrationCalculatorTests {
         let w = WeatherSnapshot(temperatureC: 32, humidityPct: 85)
         let inputs = CalculatorInputs(weightKg: 100, effortMinutes: 90, weather: w, medicalFloorML: 2500)
         let r = calc.calculate(inputs)
+        #expect(r.activityBonusML == 990)   // 90 × 11, sous le plafond de 1000
         #expect(r.totalML == 4000)
         #expect(r.plafondAppliqué == true)
     }

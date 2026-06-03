@@ -1,5 +1,3 @@
-import Foundation
-
 /// Calcul pur de l'objectif d'hydratation quotidien.
 /// Aucune dépendance Apple framework : entièrement testable hors Xcode.
 public struct HydrationCalculator: Sendable {

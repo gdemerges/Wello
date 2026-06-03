@@ -1,5 +1,3 @@
-import Foundation
-
 /// Instantané météo du jour utilisé pour le bonus d'hydratation.
 public struct WeatherSnapshot: Sendable, Equatable {
     /// Température moyenne du jour, en °C.

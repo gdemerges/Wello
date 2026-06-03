@@ -18,4 +18,9 @@ struct WeightResolverTests {
     func ignoreValeurAberrante() {
         #expect(résoudrePoids(healthKitKg: 0, profilKg: 80) == 80)
     }
+
+    @Test("Ignore un poids HealthKit négatif")
+    func ignoreValeurNégative() {
+        #expect(résoudrePoids(healthKitKg: -5, profilKg: 80) == 80)
+    }
 }
