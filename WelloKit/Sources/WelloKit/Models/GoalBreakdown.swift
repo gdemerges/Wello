@@ -1,0 +1,25 @@
+import Foundation
+
+/// Résultat détaillé du calcul, pour affichage du breakdown dans l'UI.
+public struct GoalBreakdown: Sendable, Equatable {
+    public let baseML: Int
+    public let activityBonusML: Int
+    public let weatherBonusML: Int
+    public let medicalFloorML: Int
+    public let totalML: Int
+    /// Vrai si le plancher médical a relevé l'objectif au-dessus du besoin physiologique.
+    public let plancherContraignant: Bool
+    /// Vrai si l'objectif a été bridé au plafond de sécurité (anti-hyperhydratation).
+    public let plafondAppliqué: Bool
+
+    public init(baseML: Int, activityBonusML: Int, weatherBonusML: Int, medicalFloorML: Int,
+                totalML: Int, plancherContraignant: Bool, plafondAppliqué: Bool) {
+        self.baseML = baseML
+        self.activityBonusML = activityBonusML
+        self.weatherBonusML = weatherBonusML
+        self.medicalFloorML = medicalFloorML
+        self.totalML = totalML
+        self.plancherContraignant = plancherContraignant
+        self.plafondAppliqué = plafondAppliqué
+    }
+}
