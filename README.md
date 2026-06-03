@@ -54,7 +54,7 @@ pas de rappels).
 ```
 base          = poids (kg) × 35
 activité      = min(énergie active kcal × 1, 1000)      // 1 ml/kcal (HealthKit), plafonné
-météo         = (temp > 28°C ? +300) + (humidité > 70% ? +200)   // 0 si météo indisponible
+météo         = min(max(0, ressentie°C − 27) × 50, 600) // ressentie = apparent temp, 0 si indispo
 physiologique = base + activité + météo
 total         = min(4000, max(plancher médical, physiologique))
 ```
@@ -66,6 +66,12 @@ Le bonus d'activité dérive de l'**énergie active brûlée** (kcal, HealthKit)
 seule durée : la perte sudorale à l'effort est proportionnelle à la chaleur métabolique
 produite. Évaporer 1 mL de sueur dissipe ~0,58 kcal et l'essentiel de l'énergie d'exercice
 devient chaleur → **~1 mL d'eau par kcal** (coefficient conservateur, plafonné à 1000 ml).
+
+Le bonus météo s'appuie sur la **température ressentie** (apparent temperature d'Open-Meteo),
+qui combine déjà chaleur, humidité, vent et rayonnement — un seul indicateur cohérent du stress
+thermique. Montée linéaire de **50 mL par °C ressenti au-dessus de 27 °C** (zone de confort),
+plafonnée à 600 mL. Un 30 °C sec (sueur qui s'évapore) et un 30 °C humide (qui ne s'évapore plus)
+donnent ainsi des ressentis — et des besoins — très différents.
 
 ## Où ajuster le plancher médical
 

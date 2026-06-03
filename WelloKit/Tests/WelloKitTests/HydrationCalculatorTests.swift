@@ -53,41 +53,38 @@ struct HydrationCalculatorTests {
         #expect(r.totalML == 2800)
     }
 
-    @Test("Température > 28°C → +300")
-    func bonusTempSeule() {
-        let w = WeatherSnapshot(temperatureC: 30, humidityPct: 50)
-        let inputs = CalculatorInputs(weightKg: 80, activeEnergyKcal: 0, weather: w, medicalFloorML: 2000)
-        #expect(calc.calculate(inputs).weatherBonusML == 300)
+    @Test("Température ressentie au seuil de confort ou en dessous (≤ 27°C) → bonus 0")
+    func ressentiSousConfort() {
+        for ressentie in [20.0, 27.0] {
+            let w = WeatherSnapshot(apparentTemperatureC: ressentie)
+            let inputs = CalculatorInputs(weightKg: 80, activeEnergyKcal: 0, weather: w, medicalFloorML: 2000)
+            #expect(calc.calculate(inputs).weatherBonusML == 0)
+        }
     }
 
-    @Test("Humidité > 70% → +200")
-    func bonusHumiditéSeule() {
-        let w = WeatherSnapshot(temperatureC: 20, humidityPct: 80)
-        let inputs = CalculatorInputs(weightKg: 80, activeEnergyKcal: 0, weather: w, medicalFloorML: 2000)
-        #expect(calc.calculate(inputs).weatherBonusML == 200)
-    }
-
-    @Test("Chaud ET humide → +500")
-    func bonusMétéoCombiné() {
-        let w = WeatherSnapshot(temperatureC: 30, humidityPct: 80)
+    @Test("Au-dessus du confort : 50 ml par °C ressenti")
+    func ressentiLinéaire() {
+        // 33°C ressentis → 6°C au-dessus de 27 → 300 ml.
+        let w = WeatherSnapshot(apparentTemperatureC: 33)
         let inputs = CalculatorInputs(weightKg: 80, activeEnergyKcal: 0, weather: w, medicalFloorML: 2000)
         let r = calc.calculate(inputs)
-        #expect(r.weatherBonusML == 500)
-        #expect(r.totalML == 3300)
+        #expect(r.weatherBonusML == 300)
+        #expect(r.totalML == 3100)
     }
 
-    @Test("Seuils stricts : exactement 28°C / 70% ne déclenchent pas")
-    func seuilsStricts() {
-        let w = WeatherSnapshot(temperatureC: 28, humidityPct: 70)
+    @Test("Bonus météo plafonné à 600 ml")
+    func ressentiPlafonné() {
+        // 45°C ressentis → 18 × 50 = 900 → bridé à 600.
+        let w = WeatherSnapshot(apparentTemperatureC: 45)
         let inputs = CalculatorInputs(weightKg: 80, activeEnergyKcal: 0, weather: w, medicalFloorML: 2000)
-        #expect(calc.calculate(inputs).weatherBonusML == 0)
+        #expect(calc.calculate(inputs).weatherBonusML == 600)
     }
 
     @Test("physiologicalML = base + activité + météo, indépendant du plancher")
     func besoinPhysiologique() {
         // 60 kg → 2100 base ; le plancher 2500 relève le total, mais le besoin
         // physiologique reste 2100 + activité + météo (le plancher n'est pas un terme additionné).
-        let w = WeatherSnapshot(temperatureC: 30, humidityPct: 80)   // +500
+        let w = WeatherSnapshot(apparentTemperatureC: 37)   // 10°C au-dessus du confort → +500
         let inputs = CalculatorInputs(weightKg: 60, activeEnergyKcal: 330, weather: w, medicalFloorML: 2500)
         let r = calc.calculate(inputs)
         #expect(r.physiologicalML == 2930)   // 2100 + 330 + 500
@@ -123,8 +120,8 @@ struct HydrationCalculatorTests {
 
     @Test("Objectif bridé au plafond global de 4000 ml")
     func plafondGlobal() {
-        // 100 kg → 3500 ; 990 kcal → 990 ml ; chaud+humide → 500 ; total brut 4990 → bridé 4000.
-        let w = WeatherSnapshot(temperatureC: 32, humidityPct: 85)
+        // 100 kg → 3500 ; 990 kcal → 990 ml ; ressenti 37°C → 500 ; total brut 4990 → bridé 4000.
+        let w = WeatherSnapshot(apparentTemperatureC: 37)
         let inputs = CalculatorInputs(weightKg: 100, activeEnergyKcal: 990, weather: w, medicalFloorML: 2500)
         let r = calc.calculate(inputs)
         #expect(r.activityBonusML == 990)   // sous le plafond de 1000

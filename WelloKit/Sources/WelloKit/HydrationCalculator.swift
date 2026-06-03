@@ -10,10 +10,12 @@ public struct HydrationCalculator: Sendable {
         /// majoritairement par la sueur → ~1 mL/kcal (coefficient conservateur).
         public static let mlParKcal = 1.0
         public static let plafondActivité = 1000
-        public static let seuilTempC = 28.0
-        public static let bonusTemp = 300
-        public static let seuilHumiditéPct = 70.0
-        public static let bonusHumidité = 200
+        /// Température ressentie (°C) en dessous de laquelle aucun bonus météo (zone de confort).
+        public static let seuilConfortRessentiC = 27.0
+        /// ml d'eau supplémentaires par °C ressenti au-dessus du seuil de confort.
+        public static let mlParDegréRessenti = 50.0
+        /// Plafond du bonus météo (≈ +12°C ressentis au-dessus du confort).
+        public static let plafondMétéo = 600
         /// Plafond de sécurité global : on n'affiche jamais d'objectif supérieur.
         public static let plafondGlobal = 4000
     }
@@ -46,9 +48,10 @@ public struct HydrationCalculator: Sendable {
 
     private func bonusMétéo(_ weather: WeatherSnapshot?) -> Int {
         guard let w = weather else { return 0 }   // météo absente → bonus 0
-        var bonus = 0
-        if w.temperatureC > Constantes.seuilTempC { bonus += Constantes.bonusTemp }
-        if w.humidityPct > Constantes.seuilHumiditéPct { bonus += Constantes.bonusHumidité }
-        return bonus
+        // Montée linéaire à partir du seuil de confort, plafonnée. La température ressentie
+        // combine déjà chaleur + humidité + vent (cf. WeatherSnapshot).
+        let excès = w.apparentTemperatureC - Constantes.seuilConfortRessentiC
+        guard excès > 0 else { return 0 }
+        return min(Int((excès * Constantes.mlParDegréRessenti).rounded()), Constantes.plafondMétéo)
     }
 }

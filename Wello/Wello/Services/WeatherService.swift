@@ -9,8 +9,8 @@ struct WeatherService: WeatherServicing {
         comps.queryItems = [
             .init(name: "latitude", value: String(latitude)),
             .init(name: "longitude", value: String(longitude)),
-            .init(name: "daily", value: "temperature_2m_max"),
-            .init(name: "hourly", value: "relative_humidity_2m"),
+            // Température ressentie max du jour : intègre humidité + vent + rayonnement.
+            .init(name: "daily", value: "apparent_temperature_max"),
             .init(name: "forecast_days", value: "1"),
             .init(name: "timezone", value: "auto"),
         ]
@@ -20,10 +20,8 @@ struct WeatherService: WeatherServicing {
             let (data, réponse) = try await URLSession.shared.data(from: url)
             guard (réponse as? HTTPURLResponse)?.statusCode == 200 else { return nil }
             let dto = try JSONDecoder().decode(OpenMeteoDTO.self, from: data)
-            guard let tempMax = dto.daily.temperature_2m_max.first else { return nil }
-            let humidités = dto.hourly.relative_humidity_2m
-            let humiditéMoy = humidités.isEmpty ? 0 : humidités.reduce(0, +) / Double(humidités.count)
-            return WeatherSnapshot(temperatureC: tempMax, humidityPct: humiditéMoy)
+            guard let ressentieMax = dto.daily.apparent_temperature_max.first else { return nil }
+            return WeatherSnapshot(apparentTemperatureC: ressentieMax)
         } catch {
             return nil   // réseau/API down → météo absente, le calcul tourne quand même
         }
@@ -32,8 +30,6 @@ struct WeatherService: WeatherServicing {
 
 /// DTO interne de décodage Open-Meteo.
 private struct OpenMeteoDTO: Decodable {
-    struct Daily: Decodable { let temperature_2m_max: [Double] }
-    struct Hourly: Decodable { let relative_humidity_2m: [Double] }
+    struct Daily: Decodable { let apparent_temperature_max: [Double] }
     let daily: Daily
-    let hourly: Hourly
 }

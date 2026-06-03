@@ -15,7 +15,7 @@ struct MockHealthKitService: HealthKitServicing {
 }
 
 struct MockWeatherService: WeatherServicing {
-    var snapshot: WeatherSnapshot? = WeatherSnapshot(temperatureC: 30, humidityPct: 75)
+    var snapshot: WeatherSnapshot? = WeatherSnapshot(apparentTemperatureC: 33)
     func météoDuJour(latitude: Double, longitude: Double) async -> WeatherSnapshot? { snapshot }
 }
 
