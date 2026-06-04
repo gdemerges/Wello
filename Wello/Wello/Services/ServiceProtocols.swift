@@ -10,12 +10,10 @@ struct PriseEauExterne: Sendable, Identifiable {
 
 /// Lecture/écriture HealthKit. Toutes les opérations dégradent gracieusement si refusé.
 protocol HealthKitServicing: Sendable {
-    /// Demande les autorisations (lecture workouts+poids+énergie, écriture eau). Sans effet si déjà décidé.
+    /// Demande les autorisations (lecture workouts+énergie, écriture eau). Sans effet si déjà décidé.
     func requestAuthorization() async
     /// Énergie active (kcal) brûlée en séances aujourd'hui. 0 si indisponible/refusé.
     func énergieActiveDuJour() async -> Double
-    /// Dernier poids connu en kg, ou nil si indisponible/refusé.
-    func dernierPoids() async -> Double?
     /// Écrit une prise d'eau dans Santé.app. No-op si refusé.
     func écrireEau(ml: Int, date: Date) async
     /// Supprime de Santé.app l'échantillon d'eau du montant et de la date donnés (celui

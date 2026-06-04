@@ -15,7 +15,7 @@ struct BreakdownCard: View {
                     .foregroundStyle(WelloTheme.ink)
 
                 // Termes additionnés : base + bonus activité + bonus météo.
-                ligne("Base (poids)", breakdown.baseML, icon: "scalemass.fill", teinte: WelloTheme.accent)
+                ligne("Base (EFSA)", breakdown.baseML, icon: "person.fill", teinte: WelloTheme.accent)
                 ligne("Activité", breakdown.activityBonusML, icon: "figure.run", teinte: .orange, signe: "+")
                 ligne("Météo", breakdown.weatherBonusML, icon: "cloud.sun.fill", teinte: .yellow, signe: "+")
 

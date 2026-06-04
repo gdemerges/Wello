@@ -6,13 +6,12 @@ import WelloKit
 /// non pas le statut d'autorisation brut (HealthKit masque le statut de lecture),
 /// mais ce qui a réellement fonctionné au dernier rafraîchissement.
 struct ÉtatServices: Sendable {
-    var poidsDepuisSanté = false
     var localisationDisponible = false
     var météoDisponible = false
     var notificationsAutorisées = false
 
     /// Tout fonctionne : on masque alors le diagnostic.
-    var tousOK: Bool { poidsDepuisSanté && météoDisponible && notificationsAutorisées }
+    var tousOK: Bool { météoDisponible && notificationsAutorisées }
 }
 
 /// Orchestrateur central : calcule/rafraîchit l'objectif du jour et enregistre les prises d'eau.
@@ -72,20 +71,23 @@ final class HydrationStore {
         return nouveau
     }
 
-    /// Recalcule l'objectif du jour à partir du poids, de l'effort et de la météo (best-effort),
-    /// puis met à jour (upsert) le DailyGoal du jour. Replanifie les rappels.
-    /// Recalcule l'objectif du jour. Throttlé : on évite les recalculs redondants si le dernier
-    /// date de moins de 10 min (même jour). `force` (action explicite : onboarding, toggle rappels)
-    /// court-circuite le throttle.
+    /// Recalcule l'objectif du jour à partir du sexe (base EFSA), de l'énergie active et de la
+    /// météo (best-effort), puis met à jour (upsert) le DailyGoal du jour. Replanifie les rappels.
+    /// Throttlé (10 min, même jour) ; `force` court-circuite. Si le sexe n'est pas renseigné,
+    /// aucun objectif n'est calculé (choix forcé à l'onboarding).
     func refreshToday(force: Bool = false) async {
         if !force, let dernier = dernierRefresh,
            Date.now.timeIntervalSince(dernier) < Self.fenêtreRefresh,
            Calendar.current.isDate(dernier, inSameDayAs: .now) {
             return
         }
-        dernierRefresh = .now
 
         let profil = profilCourant()
+        guard let sexe = profil.sexe else {
+            breakdown = nil   // pas d'objectif tant que le sexe n'est pas renseigné
+            return
+        }
+        dernierRefresh = .now
 
         // Demande d'autorisation HealthKit une seule fois par session (inutile ensuite).
         if !autorisationDemandée {
@@ -93,13 +95,11 @@ final class HydrationStore {
             autorisationDemandée = true
         }
         let énergie = await healthKit.énergieActiveDuJour()
-        let poidsHK = await healthKit.dernierPoids()
-        let poids = résoudrePoids(healthKitKg: poidsHK, profilKg: profil.weightKg)
 
         let (snapshot, localisationOK) = await météoActuelle()
         météoIndisponible = (snapshot == nil)
 
-        let inputs = CalculatorInputs(weightKg: poids, activeEnergyKcal: énergie,
+        let inputs = CalculatorInputs(sex: sexe, activeEnergyKcal: énergie,
                                       weather: snapshot, medicalFloorML: profil.medicalFloorML)
         let resultat = calculator.calculate(inputs)
         breakdown = resultat
@@ -108,8 +108,7 @@ final class HydrationStore {
         await importerEauHealthKit()
 
         let notifsOK = await notifications.autorisationAccordée()
-        étatServices = ÉtatServices(poidsDepuisSanté: poidsHK != nil,
-                                    localisationDisponible: localisationOK,
+        étatServices = ÉtatServices(localisationDisponible: localisationOK,
                                     météoDisponible: snapshot != nil,
                                     notificationsAutorisées: notifsOK)
 

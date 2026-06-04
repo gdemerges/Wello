@@ -4,10 +4,8 @@ import WelloKit
 /// Implémentations factices pour les SwiftUI previews et le développement hors device.
 struct MockHealthKitService: HealthKitServicing {
     var énergieKcal: Double = 320
-    var poids: Double? = 78
     func requestAuthorization() async {}
     func énergieActiveDuJour() async -> Double { énergieKcal }
-    func dernierPoids() async -> Double? { poids }
     func écrireEau(ml: Int, date: Date) async {}
     func supprimerEau(ml: Int, date: Date) async {}
     func prisesEauExternes(depuis date: Date) async -> [PriseEauExterne] { [] }
