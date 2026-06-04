@@ -38,7 +38,7 @@ struct MockStoreService: StoreServicing {
     var statut: EntitlementStatus = .free
     func statutActuel() async -> EntitlementStatus { statut }
     func produitPlus() async -> StoreProduct? {
-        StoreProduct(displayName: "Wello+", displayPrice: "8,99 €")
+        StoreProduct(displayName: "Wello+", displayPrice: "2,99 €")
     }
     func acheter() async throws -> PurchaseOutcome { .success }
     func restaurer() async -> EntitlementStatus { statut }
