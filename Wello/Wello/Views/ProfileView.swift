@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 import WelloKit
 
-/// Édition du profil : poids, plancher médical (validé ≤ 4000), rappels.
+/// Édition du profil : sexe (base EFSA), plancher médical (validé ≤ 4000), rappels, montants rapides.
 struct ProfileView: View {
     @Environment(HydrationStore.self) private var store
     @Environment(\.modelContext) private var modelContext
@@ -49,12 +49,17 @@ struct ProfileView: View {
                 }
                 if let profil {
                     Section {
-                        Stepper(value: Binding(get: { profil.weightKg },
-                                               set: { profil.weightKg = $0; profil.updatedAt = .now
-                                                      Task { await store.refreshToday(force: true) } }),
-                                in: 30...250, step: 0.5) {
-                            label("Poids", String(format: "%.1f kg", profil.weightKg), icon: "scalemass.fill", teinte: WelloTheme.accent)
+                        Picker(selection: Binding(get: { profil.sexe ?? .homme },
+                                                  set: { profil.sexe = $0; profil.updatedAt = .now
+                                                         Task { await store.refreshToday(force: true) } })) {
+                            Text("Homme").tag(BiologicalSex.homme)
+                            Text("Femme").tag(BiologicalSex.femme)
+                        } label: {
+                            label("Sexe", profil.sexe?.label, icon: "person.fill", teinte: WelloTheme.accent)
                         }
+                    } footer: {
+                        Text("Fixe ta base d'hydratation selon les apports de référence EFSA (2000 ml homme / 1600 ml femme).")
+                            .font(.system(.caption, design: .rounded))
                     }
 
                     Section {
@@ -95,9 +100,7 @@ struct ProfileView: View {
 
                     if !store.étatServices.tousOK {
                         Section {
-                            diagLigne("Santé (poids)", ok: store.étatServices.poidsDepuisSanté,
-                                      détailKO: "poids depuis le profil")
-                            diagLigne("Localisation / météo", ok: store.étatServices.météoDisponible,
+                                diagLigne("Localisation / météo", ok: store.étatServices.météoDisponible,
                                       détailKO: "bonus météo à 0")
                             diagLigne("Notifications", ok: store.étatServices.notificationsAutorisées,
                                       détailKO: "rappels indisponibles")
