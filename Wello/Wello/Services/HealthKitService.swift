@@ -10,7 +10,6 @@ final class HealthKitService: HealthKitServicing, @unchecked Sendable {
     private let store = HKHealthStore()
 
     private let workoutType = HKObjectType.workoutType()
-    private let bodyMassType = HKQuantityType(.bodyMass)
     private let waterType = HKQuantityType(.dietaryWater)
     private let energyType = HKQuantityType(.activeEnergyBurned)
 
@@ -18,7 +17,7 @@ final class HealthKitService: HealthKitServicing, @unchecked Sendable {
         guard HKHealthStore.isHealthDataAvailable() else { return }
         // Eau aussi en lecture (requête/suppression de nos échantillons) ; énergie active
         // pour estimer la perte sudorale à l'effort.
-        let read: Set<HKObjectType> = [workoutType, bodyMassType, waterType, energyType]
+        let read: Set<HKObjectType> = [workoutType, waterType, energyType]
         let write: Set<HKSampleType> = [waterType]
         try? await store.requestAuthorization(toShare: write, read: read)
     }
@@ -55,19 +54,6 @@ final class HealthKitService: HealthKitServicing, @unchecked Sendable {
             store.execute(q)
         }
         return workout?.endDate
-    }
-
-    func dernierPoids() async -> Double? {
-        guard HKHealthStore.isHealthDataAvailable() else { return nil }
-        let tri = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
-        let sample: HKQuantitySample? = await withCheckedContinuation { cont in
-            let q = HKSampleQuery(sampleType: bodyMassType, predicate: nil,
-                                  limit: 1, sortDescriptors: [tri]) { _, samples, _ in
-                cont.resume(returning: samples?.first as? HKQuantitySample)
-            }
-            store.execute(q)
-        }
-        return sample?.quantity.doubleValue(for: .gramUnit(with: .kilo))
     }
 
     func écrireEau(ml: Int, date: Date) async {

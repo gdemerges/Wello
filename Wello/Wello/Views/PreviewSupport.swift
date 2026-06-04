@@ -14,7 +14,9 @@ enum PreviewSupport {
         let container = try! ModelContainer(for: UserProfile.self, DailyGoal.self, HydrationLog.self,
                                             configurations: config)
         let ctx = container.mainContext
-        ctx.insert(UserProfile(weightKg: 78, medicalFloorML: 2500))
+        let profil = UserProfile(medicalFloorML: 2500)
+        profil.sexe = .homme
+        ctx.insert(profil)
         ctx.insert(HydrationLog(amountML: 250))
         ctx.insert(HydrationLog(amountML: 500))
 
