@@ -2,6 +2,7 @@ import SwiftUI
 import WelloKit
 
 /// Liens légaux requis par l'App Store pour un achat. À remplacer par les vraies URLs.
+/// Force-unwrap sûr : ce sont des constantes ASCII valides (jamais issues d'une saisie).
 enum WelloLinks {
     static let conditions = URL(string: "https://wello.app/conditions")!
     static let confidentialité = URL(string: "https://wello.app/confidentialite")!
@@ -19,6 +20,7 @@ struct PremiumGateCard: View {
                     Image(systemName: "lock.fill")
                         .font(.system(size: 20))
                         .foregroundStyle(WelloTheme.accent)
+                        .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 3) {
                         Text(bénéfice)
                             .font(.system(.headline, design: .rounded))
@@ -31,10 +33,12 @@ struct PremiumGateCard: View {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(WelloTheme.inkSoft.opacity(0.6))
+                        .accessibilityHidden(true)
                 }
             }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("\(bénéfice). Débloquer avec Wello+")
         .accessibilityHint("Ouvre l'offre Wello+")
     }
 }
@@ -51,7 +55,7 @@ struct PaywallView: View {
     @State private var enCours = false
     @State private var messageErreur: String?
 
-    private let avantages: [(icon: String, titre: String)] = [
+    private static let avantages: [(icon: String, titre: String)] = [
         ("clock.arrow.circlepath", "Historique illimité"),
         ("chart.line.uptrend.xyaxis", "Analyses et tendances"),
         ("cup.and.saucer.fill", "Boissons personnalisées"),
@@ -94,6 +98,7 @@ struct PaywallView: View {
             Image(systemName: "star.fill")
                 .font(.system(size: 40))
                 .foregroundStyle(WelloTheme.accentGradient)
+                .accessibilityHidden(true)
             Text(bénéfice)
                 .font(.system(.title3, design: .rounded).weight(.bold))
                 .foregroundStyle(WelloTheme.ink)
@@ -107,7 +112,7 @@ struct PaywallView: View {
     private var listeAvantages: some View {
         CardContainer {
             VStack(alignment: .leading, spacing: 14) {
-                ForEach(avantages, id: \.titre) { a in
+                ForEach(Self.avantages, id: \.titre) { a in
                     HStack(spacing: 12) {
                         Image(systemName: a.icon)
                             .font(.system(size: 16, weight: .semibold))
@@ -151,6 +156,7 @@ struct PaywallView: View {
             Task { await restaurer() }
         }
         .font(.system(.subheadline, design: .rounded))
+        .frame(minHeight: 44)
         .foregroundStyle(WelloTheme.accentDeep)
         .disabled(enCours)
     }
