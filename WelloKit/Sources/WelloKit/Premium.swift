@@ -46,6 +46,6 @@ public func historyVisibleSince(status: EntitlementStatus,
         return nil
     case .free:
         let débutAujourdhui = calendar.startOfDay(for: now)
-        return calendar.date(byAdding: .day, value: -6, to: débutAujourdhui)
+        return calendar.date(byAdding: .day, value: -6, to: débutAujourdhui) ?? débutAujourdhui // repli sûr : en cas d'échec calendaire, n'affiche qu'aujourd'hui (jamais illimité)
     }
 }
