@@ -100,7 +100,7 @@ struct ProfileView: View {
 
                     if !store.étatServices.tousOK {
                         Section {
-                                diagLigne("Localisation / météo", ok: store.étatServices.météoDisponible,
+                            diagLigne("Localisation / météo", ok: store.étatServices.météoDisponible,
                                       détailKO: "bonus météo à 0")
                             diagLigne("Notifications", ok: store.étatServices.notificationsAutorisées,
                                       détailKO: "rappels indisponibles")
