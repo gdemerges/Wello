@@ -205,7 +205,7 @@ enum PurchaseOutcome: Sendable, Equatable {
 /// Accès au store (achat, statut, restauration). Mockable pour previews/dev.
 protocol StoreServicing: Sendable {
     /// Statut d'entitlement courant (lecture locale StoreKit, valide offline après 1ʳᵉ synchro).
-    func currentStatus() async -> EntitlementStatus
+    func statutActuel() async -> EntitlementStatus
     /// Produit « Wello+ » avec prix localisé, ou nil si indisponible (réseau/StoreKit).
     func produitPlus() async -> StoreProduct?
     /// Lance l'achat du produit Wello+.
@@ -229,7 +229,7 @@ Modify `Wello/Wello/Services/Mocks.swift` — ajouter à la fin du fichier (apr�
 ```swift
 struct MockStoreService: StoreServicing {
     var statut: EntitlementStatus = .free
-    func currentStatus() async -> EntitlementStatus { statut }
+    func statutActuel() async -> EntitlementStatus { statut }
     func produitPlus() async -> StoreProduct? {
         StoreProduct(displayName: "Wello+", displayPrice: "8,99 €")
     }
@@ -298,11 +298,14 @@ struct StoreKitService: StoreServicing {
         }
         switch try await produit.purchase() {
         case .success(let verification):
-            if case .verified(let t) = verification {
+            switch verification {
+            case .verified(let t):
                 await t.finish()
                 return .success
+            case .unverified(let t, _):
+                await t.finish()   // vide la file ; aucun accès accordé sur une transaction non vérifiée
+                return .pending
             }
-            return .pending
         case .userCancelled:
             return .userCancelled
         case .pending:
@@ -321,9 +324,12 @@ struct StoreKitService: StoreServicing {
         AsyncStream { continuation in
             let task = Task {
                 for await result in Transaction.updates {
-                    if case .verified(let t) = result {
+                    switch result {
+                    case .verified(let t):
                         await t.finish()
                         continuation.yield(t.revocationDate == nil ? .plus : .free)
+                    case .unverified(let t, _):
+                        await t.finish()   // vide la file ; pas d'accès sur transaction non vérifiée
                     }
                 }
             }
