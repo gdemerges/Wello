@@ -60,7 +60,8 @@ struct MainView: View {
 
                     if let breakdown = store.breakdown {
                         BreakdownCard(breakdown: breakdown,
-                                      météoIndisponible: store.météoIndisponible)
+                                      météoIndisponible: store.météoIndisponible,
+                                      libelléÉtatPhysio: profils.first.flatMap { $0.etatPhysio == .aucun ? nil : $0.etatPhysio.label })
                             .padding(.horizontal)
                     }
                 }

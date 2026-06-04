@@ -31,20 +31,22 @@ public struct HydrationCalculator: Sendable {
 
         let météo = bonusMétéo(inputs.weather)
 
-        let physiologique = base + activité + météo
-        // Le plancher médical ne doit jamais être sous-estimé.
-        let avantPlafond = max(inputs.medicalFloorML, physiologique)
-        // Plafond de sécurité anti-hyperhydratation.
-        let total = min(Constantes.plafondGlobal, avantPlafond)
+        let étatPhysio = inputs.physiologicalState.bonusML
+        // Garde-fou : un besoin rénal négatif (saisie aberrante) ne retire jamais d'eau.
+        let rénal = max(0, inputs.renalBonusML)
+
+        let physiologique = base + activité + météo + étatPhysio + rénal
+        // Plafond de sécurité anti-hyperhydratation : unique garde-fou (plus de plancher).
+        let total = min(Constantes.plafondGlobal, physiologique)
 
         return GoalBreakdown(
             baseML: base,
             activityBonusML: activité,
             weatherBonusML: météo,
-            medicalFloorML: inputs.medicalFloorML,
+            lifeStageBonusML: étatPhysio,
+            renalBonusML: rénal,
             totalML: total,
-            plancherContraignant: inputs.medicalFloorML > physiologique,
-            plafondAppliqué: avantPlafond > Constantes.plafondGlobal
+            plafondAppliqué: physiologique > Constantes.plafondGlobal
         )
     }
 

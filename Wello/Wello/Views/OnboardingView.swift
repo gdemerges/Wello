@@ -17,7 +17,7 @@ struct OnboardingView: View {
              texte: "Ton suivi d'hydratation personnel, calculé pour toi et 100 % local sur ton iPhone."),
         Page(icon: "figure.run",
              titre: "Un objectif qui s'adapte",
-             texte: "Wello ajuste ton objectif du jour selon ton sexe, ton activité (Santé) et la météo — sans jamais descendre sous ton plancher médical."),
+             texte: "Wello ajuste ton objectif du jour selon ton sexe, ton activité (Santé), la météo et ta situation (grossesse, allaitement, besoin rénal)."),
         Page(icon: "checkmark.shield.fill",
              titre: "Tes autorisations",
              texte: "Santé, localisation et notifications affinent le calcul et les rappels. Tout refus est géré : l'app reste pleinement utilisable en saisie manuelle."),

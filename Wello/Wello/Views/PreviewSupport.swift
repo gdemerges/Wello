@@ -14,7 +14,7 @@ enum PreviewSupport {
         let container = try! ModelContainer(for: UserProfile.self, DailyGoal.self, HydrationLog.self,
                                             configurations: config)
         let ctx = container.mainContext
-        let profil = UserProfile(medicalFloorML: 2500)
+        let profil = UserProfile()
         profil.sexe = .homme
         ctx.insert(profil)
         ctx.insert(HydrationLog(amountML: 250))
@@ -22,8 +22,8 @@ enum PreviewSupport {
 
         let hier = Calendar.current.date(byAdding: .day, value: -1, to: .now)!
         ctx.insert(DailyGoal(date: Calendar.current.startOfDay(for: hier),
-                             baseML: 2730, activityBonusML: 300, weatherBonusML: 500,
-                             medicalFloorML: 2500, totalML: 3530))
+                             baseML: 2000, activityBonusML: 300, weatherBonusML: 500,
+                             lifeStageBonusML: 0, renalBonusML: 0, totalML: 2800))
         return container
     }
 

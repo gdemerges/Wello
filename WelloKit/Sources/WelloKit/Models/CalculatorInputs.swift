@@ -7,12 +7,17 @@ public struct CalculatorInputs: Sendable, Equatable {
     /// Proxy physiologique de la perte sudorale (intensité, pas seulement durée).
     public let activeEnergyKcal: Double
     public let weather: WeatherSnapshot?
-    public let medicalFloorML: Int
+    /// État physiologique (grossesse/allaitement) → terme additif EFSA.
+    public let physiologicalState: PhysiologicalState
+    /// Besoin rénal additif (lithiase). 0 si le suivi rénal est désactivé dans le profil.
+    public let renalBonusML: Int
 
-    public init(sex: BiologicalSex, activeEnergyKcal: Double, weather: WeatherSnapshot?, medicalFloorML: Int) {
+    public init(sex: BiologicalSex, activeEnergyKcal: Double, weather: WeatherSnapshot?,
+                physiologicalState: PhysiologicalState = .aucun, renalBonusML: Int = 0) {
         self.sex = sex
         self.activeEnergyKcal = activeEnergyKcal
         self.weather = weather
-        self.medicalFloorML = medicalFloorML
+        self.physiologicalState = physiologicalState
+        self.renalBonusML = renalBonusML
     }
 }

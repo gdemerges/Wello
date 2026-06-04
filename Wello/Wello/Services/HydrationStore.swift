@@ -99,8 +99,9 @@ final class HydrationStore {
         let (snapshot, localisationOK) = await météoActuelle()
         météoIndisponible = (snapshot == nil)
 
-        let inputs = CalculatorInputs(sex: sexe, activeEnergyKcal: énergie,
-                                      weather: snapshot, medicalFloorML: profil.medicalFloorML)
+        let inputs = CalculatorInputs(sex: sexe, activeEnergyKcal: énergie, weather: snapshot,
+                                      physiologicalState: profil.etatPhysio,
+                                      renalBonusML: profil.renalBonusEffectifML)
         let resultat = calculator.calculate(inputs)
         breakdown = resultat
         upsertDailyGoal(resultat)
@@ -257,12 +258,14 @@ final class HydrationStore {
             goal.baseML = r.baseML
             goal.activityBonusML = r.activityBonusML
             goal.weatherBonusML = r.weatherBonusML
-            goal.medicalFloorML = r.medicalFloorML
+            goal.lifeStageBonusML = r.lifeStageBonusML
+            goal.renalBonusML = r.renalBonusML
             goal.totalML = r.totalML
             goal.calculatedAt = .now
         } else {
             let goal = DailyGoal(date: jour, baseML: r.baseML, activityBonusML: r.activityBonusML,
-                                 weatherBonusML: r.weatherBonusML, medicalFloorML: r.medicalFloorML,
+                                 weatherBonusML: r.weatherBonusML,
+                                 lifeStageBonusML: r.lifeStageBonusML, renalBonusML: r.renalBonusML,
                                  totalML: r.totalML)
             modelContext.insert(goal)
         }

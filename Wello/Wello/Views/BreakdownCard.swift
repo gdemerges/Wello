@@ -1,11 +1,13 @@
 import SwiftUI
 import WelloKit
 
-/// Carte détaillant la composition de l'objectif du jour.
+/// Carte détaillant la composition de l'objectif du jour (100 % additif).
 struct BreakdownCard: View {
     let breakdown: GoalBreakdown
     /// Vrai si la météo n'a pas pu être récupérée (le bonus à 0 n'est alors pas significatif).
     var météoIndisponible: Bool = false
+    /// Libellé de la ligne état physiologique (selon l'état actif). nil si aucun.
+    var libelléÉtatPhysio: String? = nil
 
     var body: some View {
         CardContainer {
@@ -14,26 +16,18 @@ struct BreakdownCard: View {
                     .font(.system(.headline, design: .rounded))
                     .foregroundStyle(WelloTheme.ink)
 
-                // Termes additionnés : base + bonus activité + bonus météo.
+                // Termes additifs : base + bonus, dans l'ordre. Optionnels masqués si nuls.
                 ligne("Base (EFSA)", breakdown.baseML, icon: "person.fill", teinte: WelloTheme.accent)
                 ligne("Activité", breakdown.activityBonusML, icon: "figure.run", teinte: .orange, signe: "+")
                 ligne("Météo", breakdown.weatherBonusML, icon: "cloud.sun.fill", teinte: .yellow, signe: "+")
-
-                Divider().overlay(WelloTheme.inkSoft.opacity(0.25))
-
-                // Sous-total des termes ci-dessus (≠ plancher).
-                HStack {
-                    Text("Besoin physiologique")
-                        .font(.system(.subheadline, design: .rounded).weight(.semibold))
-                        .foregroundStyle(WelloTheme.ink)
-                    Spacer()
-                    Text("\(breakdown.physiologicalML) ml")
-                        .font(.system(.body, design: .rounded).weight(.semibold))
-                        .foregroundStyle(WelloTheme.ink)
+                if breakdown.lifeStageBonusML > 0 {
+                    ligne(libelléÉtatPhysio ?? "État physiologique", breakdown.lifeStageBonusML,
+                          icon: "figure.stand", teinte: .pink, signe: "+")
                 }
-
-                // Plancher médical : seuil (max), pas un terme additionné.
-                seuilPlancher(breakdown.medicalFloorML)
+                if breakdown.renalBonusML > 0 {
+                    ligne("Besoin rénal", breakdown.renalBonusML,
+                          icon: "cross.case.fill", teinte: .purple, signe: "+")
+                }
 
                 Divider().overlay(WelloTheme.inkSoft.opacity(0.25))
 
@@ -46,17 +40,9 @@ struct BreakdownCard: View {
                         .font(.system(.title3, design: .rounded).weight(.bold))
                         .foregroundStyle(WelloTheme.accentDeep)
                 }
-                if !breakdown.plafondAppliqué {
-                    Text("L'objectif est le plus élevé du besoin physiologique et du plancher médical.")
-                        .font(.system(.caption, design: .rounded))
-                        .foregroundStyle(WelloTheme.inkSoft)
-                }
 
                 if météoIndisponible {
                     badge("Météo indisponible — bonus non appliqué", "wifi.slash", .gray)
-                }
-                if breakdown.plancherContraignant {
-                    badge("Objectif relevé au plancher médical", "cross.case.fill", .pink)
                 }
                 if breakdown.plafondAppliqué {
                     badge("Bridé au plafond de sécurité (4000 ml)", "exclamationmark.shield.fill", .orange)
@@ -83,30 +69,6 @@ struct BreakdownCard: View {
         }
     }
 
-    /// Le plancher médical n'est pas additionné : c'est un seuil sous lequel l'objectif
-    /// ne descend jamais. Présenté distinctement (libellé « seuil minimum », pas de « + »).
-    private func seuilPlancher(_ valeur: Int) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: "cross.case.fill")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.pink)
-                .frame(width: 30, height: 30)
-                .background(Color.pink.opacity(0.15), in: Circle())
-            VStack(alignment: .leading, spacing: 1) {
-                Text("Plancher médical")
-                    .font(.system(.subheadline, design: .rounded))
-                    .foregroundStyle(WelloTheme.inkSoft)
-                Text("seuil minimum")
-                    .font(.system(.caption2, design: .rounded))
-                    .foregroundStyle(WelloTheme.inkSoft.opacity(0.7))
-            }
-            Spacer()
-            Text("\(valeur) ml")
-                .font(.system(.body, design: .rounded).weight(.medium))
-                .foregroundStyle(WelloTheme.ink)
-        }
-    }
-
     private func badge(_ texte: String, _ icon: String, _ teinte: Color) -> some View {
         Label(texte, systemImage: icon)
             .font(.system(.caption, design: .rounded))
@@ -119,9 +81,10 @@ struct BreakdownCard: View {
 
 #if DEBUG
 #Preview {
-    BreakdownCard(breakdown: GoalBreakdown(baseML: 2730, activityBonusML: 300, weatherBonusML: 500,
-                                           medicalFloorML: 2500, totalML: 3530,
-                                           plancherContraignant: false, plafondAppliqué: false))
+    BreakdownCard(breakdown: GoalBreakdown(baseML: 1600, activityBonusML: 200, weatherBonusML: 300,
+                                           lifeStageBonusML: 700, renalBonusML: 0, totalML: 2800,
+                                           plafondAppliqué: false),
+                  libelléÉtatPhysio: "Allaitement")
     .padding()
     .welloBackground()
 }

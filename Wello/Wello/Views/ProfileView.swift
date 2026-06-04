@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 import WelloKit
 
-/// Édition du profil : sexe (base EFSA), plancher médical (validé ≤ 4000), rappels, montants rapides.
+/// Édition du profil : sexe (base EFSA), état physiologique, calculs rénaux, rappels, montants rapides.
 struct ProfileView: View {
     @Environment(HydrationStore.self) private var store
     @Environment(\.modelContext) private var modelContext
@@ -63,14 +63,38 @@ struct ProfileView: View {
                     }
 
                     Section {
-                        Stepper(value: Binding(get: { profil.medicalFloorML },
-                                               set: { profil.medicalFloorML = min($0, 4000); profil.updatedAt = .now
-                                                      Task { await store.refreshToday(force: true) } }),
-                                in: 1000...4000, step: 100) {
-                            label("Plancher médical", "\(profil.medicalFloorML) ml", icon: "cross.case.fill", teinte: .pink)
+                        Picker(selection: Binding(get: { profil.etatPhysio },
+                                                  set: { profil.etatPhysio = $0; profil.updatedAt = .now
+                                                         Task { await store.refreshToday(force: true) } })) {
+                            Text("Aucun").tag(PhysiologicalState.aucun)
+                            Text("Enceinte").tag(PhysiologicalState.grossesse)
+                            Text("Allaitante").tag(PhysiologicalState.allaitement)
+                        } label: {
+                            label("État physiologique", profil.etatPhysio.label,
+                                  icon: "figure.stand", teinte: .pink)
                         }
                     } footer: {
-                        Text("Plafonné à 4000 ml pour éviter toute hyperhydratation.")
+                        Text("Ajoute l'apport recommandé (EFSA) : +300 ml enceinte, +700 ml allaitante.")
+                            .font(.system(.caption, design: .rounded))
+                    }
+
+                    Section {
+                        Toggle(isOn: Binding(get: { profil.renalLithiase },
+                                             set: { profil.renalLithiase = $0; profil.updatedAt = .now
+                                                    Task { await store.refreshToday(force: true) } })) {
+                            label("Calculs rénaux (lithiase)", nil, icon: "cross.case.fill", teinte: .purple)
+                        }
+                        if profil.renalLithiase {
+                            Stepper(value: Binding(get: { profil.renalBonusML },
+                                                   set: { profil.renalBonusML = $0; profil.updatedAt = .now
+                                                          Task { await store.refreshToday(force: true) } }),
+                                    in: 500...1500, step: 100) {
+                                label("Apport rénal", "+\(profil.renalBonusML) ml",
+                                      icon: "drop.fill", teinte: .purple)
+                            }
+                        }
+                    } footer: {
+                        Text("Vise un apport plus élevé pour la prévention des calculs. À régler selon avis médical.")
                             .font(.system(.caption, design: .rounded))
                     }
 
