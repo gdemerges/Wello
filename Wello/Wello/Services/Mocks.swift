@@ -36,7 +36,7 @@ struct MockNotificationService: NotificationServicing {
 
 struct MockStoreService: StoreServicing {
     var statut: EntitlementStatus = .free
-    func currentStatus() async -> EntitlementStatus { statut }
+    func statutActuel() async -> EntitlementStatus { statut }
     func produitPlus() async -> StoreProduct? {
         StoreProduct(displayName: "Wello+", displayPrice: "8,99 €")
     }

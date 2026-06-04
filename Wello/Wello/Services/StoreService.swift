@@ -1,5 +1,4 @@
 import Foundation
-import StoreKit
 import WelloKit
 
 /// Produit premium tel qu'affiché à l'utilisateur (prix localisé par StoreKit).
@@ -18,7 +17,7 @@ enum PurchaseOutcome: Sendable, Equatable {
 /// Accès au store (achat, statut, restauration). Mockable pour previews/dev.
 protocol StoreServicing: Sendable {
     /// Statut d'entitlement courant (lecture locale StoreKit, valide offline après 1ʳᵉ synchro).
-    func currentStatus() async -> EntitlementStatus
+    func statutActuel() async -> EntitlementStatus
     /// Produit « Wello+ » avec prix localisé, ou nil si indisponible (réseau/StoreKit).
     func produitPlus() async -> StoreProduct?
     /// Lance l'achat du produit Wello+.
