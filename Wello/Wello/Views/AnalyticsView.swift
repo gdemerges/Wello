@@ -36,14 +36,14 @@ struct AnalyticsView: View {
 
     // MARK: Données
 
-    /// Consommé (ml) par jour, agrégé en un seul passage sur les logs.
+    /// Consommé effectif (ml) par jour, agrégé en un seul passage sur les logs (jours bornés à ≥ 0).
     private func consommationParJour() -> [Date: Int] {
         let cal = Calendar.current
         var map: [Date: Int] = [:]
         for log in logs {
-            map[cal.startOfDay(for: log.loggedAt), default: 0] += log.amountML
+            map[cal.startOfDay(for: log.loggedAt), default: 0] += log.effectiveML
         }
-        return map
+        return map.mapValues(clampedDayTotal)
     }
 
     /// Totaux jour (consommé vs objectif), du plus récent au plus ancien.
@@ -55,13 +55,13 @@ struct AnalyticsView: View {
         }
     }
 
-    /// (heure, ml) des prises sur les 30 derniers jours, pour la répartition.
+    /// (heure, hydratation effective) des prises sur les 30 derniers jours, pour la répartition.
     private func entréesHoraires() -> [(hour: Int, ml: Int)] {
         let cal = Calendar.current
         let borne = cal.date(byAdding: .day, value: -29, to: cal.startOfDay(for: .now))!
         return logs
             .filter { $0.loggedAt >= borne }
-            .map { (hour: cal.component(.hour, from: $0.loggedAt), ml: $0.amountML) }
+            .map { (hour: cal.component(.hour, from: $0.loggedAt), ml: max(0, $0.effectiveML)) }
     }
 
     // MARK: Cartes
