@@ -43,16 +43,19 @@ struct DayDetailView: View {
     }
 
     private func ligne(_ prise: HydrationLog) -> some View {
-        let typé = prise.coefficient != 1.0
+        // Nom de la boisson dès qu'elle n'est pas de l'eau (même à coefficient 1.0, ex. lait) ;
+        // l'effectif n'est montré que quand le coefficient change le compte (≠ 1.0).
+        let nommée = prise.drink != .water
+        let effectifAffiché = prise.coefficient != 1.0
         return HStack(spacing: 12) {
             Image(systemName: prise.source == "healthkit" ? "heart.fill" : prise.drink.icon)
                 .foregroundStyle(prise.source == "healthkit" ? .pink : WelloTheme.accent)
             VStack(alignment: .leading, spacing: 1) {
-                Text(typé ? "\(prise.amountML) ml de \(prise.drink.label.lowercased())"
-                          : "\(prise.amountML) ml")
+                Text(nommée ? "\(prise.amountML) ml de \(prise.drink.label.lowercased())"
+                            : "\(prise.amountML) ml")
                     .font(.system(.body, design: .rounded).weight(.medium))
                     .foregroundStyle(WelloTheme.ink)
-                Text(sousTitre(prise, typé: typé))
+                Text(sousTitre(prise, effectifAffiché: effectifAffiché))
                     .font(.system(.caption2, design: .rounded))
                     .foregroundStyle(WelloTheme.inkSoft)
             }
@@ -63,10 +66,10 @@ struct DayDetailView: View {
         }
     }
 
-    /// Sous-titre : provenance pour l'eau/HealthKit, hydratation effective pour une boisson typée.
-    private func sousTitre(_ prise: HydrationLog, typé: Bool) -> String {
+    /// Sous-titre : provenance pour l'eau/HealthKit, hydratation effective si le coefficient ≠ 1.0.
+    private func sousTitre(_ prise: HydrationLog, effectifAffiché: Bool) -> String {
         if prise.source == "healthkit" { return "depuis Santé" }
-        if typé { return "≈ \(prise.effectiveML) ml hydratants" }
+        if effectifAffiché { return "≈ \(prise.effectiveML) ml hydratants" }
         return "saisie dans Wello"
     }
 }
