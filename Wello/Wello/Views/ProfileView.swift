@@ -111,7 +111,7 @@ struct ProfileView: View {
                             Text("Homme").tag(BiologicalSex.homme)
                             Text("Femme").tag(BiologicalSex.femme)
                         } label: {
-                            label("Sexe", profil.sexe?.label, icon: "person.fill", teinte: WelloTheme.accent)
+                            label("Sexe", nil, icon: "person.fill", teinte: WelloTheme.accent)
                         }
                     } footer: {
                         Text("Fixe ta base d'hydratation selon les apports de référence EFSA (2000 ml homme / 1600 ml femme).")
@@ -126,7 +126,7 @@ struct ProfileView: View {
                             Text("Enceinte").tag(PhysiologicalState.grossesse)
                             Text("Allaitante").tag(PhysiologicalState.allaitement)
                         } label: {
-                            label("État physiologique", profil.etatPhysio.label,
+                            label("État physiologique", nil,
                                   icon: "figure.stand", teinte: .pink)
                         }
                     } footer: {
