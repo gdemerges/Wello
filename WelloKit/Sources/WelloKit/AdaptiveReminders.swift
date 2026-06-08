@@ -56,4 +56,42 @@ public struct AdaptiveReminderPlanner: Sendable {
     public func aAssezDeDonnées(_ historique: [JourDePrises]) -> Bool {
         historique.filter { !$0.minutesDePrise.isEmpty }.count >= Self.minJoursPourAdaptatif
     }
+
+    /// Fenêtre d'éveil déduite des habitudes de prises : réveil ≈ 15ᵉ percentile des 1ʳᵉˢ
+    /// prises, coucher ≈ 85ᵉ percentile des dernières. `nil` si aucune donnée exploitable.
+    public func fenêtreDepuisHistorique(_ historique: [JourDePrises]) -> FenêtreÉveil? {
+        var premières: [Int] = []
+        var dernières: [Int] = []
+        for jour in historique {
+            let triées = jour.minutesDePrise.sorted()
+            guard let p = triées.first, let d = triées.last else { continue }
+            premières.append(p)
+            dernières.append(d)
+        }
+        guard !premières.isEmpty else { return nil }
+        let réveil = Self.clampRéveil(percentile(premières, 15))
+        let coucher = Self.clampCoucher(percentile(dernières, 85))
+        return FenêtreÉveil(réveilMin: réveil, coucherMin: coucher)
+    }
+
+    // Bornes de sécurité pour ne jamais rappeler en pleine nuit.
+    static func clampRéveil(_ m: Int) -> Int { min(max(m, 240), 660) }    // 4:00–11:00
+    static func clampCoucher(_ m: Int) -> Int { min(max(m, 1080), 1410) } // 18:00–23:30
+}
+
+/// Percentile par rang le plus proche (p ∈ 0...100), sur une liste non vide.
+func percentile(_ valeurs: [Int], _ p: Int) -> Int {
+    let triées = valeurs.sorted()
+    guard triées.count > 1 else { return triées.first ?? 0 }
+    let rang = Int((Double(p) / 100.0 * Double(triées.count - 1)).rounded())
+    return triées[min(max(rang, 0), triées.count - 1)]
+}
+
+/// Médiane entière d'une liste non vide (moyenne basse des deux centraux si pair).
+func médiane(_ valeurs: [Int]) -> Int {
+    let triées = valeurs.sorted()
+    let n = triées.count
+    guard n > 0 else { return 0 }
+    if n % 2 == 1 { return triées[n / 2] }
+    return (triées[n / 2 - 1] + triées[n / 2]) / 2
 }
