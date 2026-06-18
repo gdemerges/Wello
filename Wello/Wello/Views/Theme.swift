@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import WelloKit
 
 // MARK: - Couleurs
 
@@ -33,11 +34,16 @@ extension UIColor {
 // MARK: - Thème
 
 /// Palette et styles « eau / hydratation » de Wello.
+/// Les 4 teintes d'accent sont thématisables (Wello+) : elles se lisent sur `current`, palette
+/// active mutée par `ThemeStore`. Les neutres adaptatifs restent fixes (lisibilité clair/sombre).
 enum WelloTheme {
-    static let accent = Color(hex: 0x4FB0E5)        // bleu glacier
-    static let accentDeep = Color(hex: 0x2E8BC9)
-    static let waterTop = Color(hex: 0x86D7F5)
-    static let waterBottom = Color(hex: 0x3FA3E0)
+    /// Thème actif. Posé par `ThemeStore` au démarrage (défaut `glacier` = palette historique).
+    static var current: AppTheme = .glacier
+
+    static var accent: Color { Color(hex: current.palette.accent) }          // bleu glacier (défaut)
+    static var accentDeep: Color { Color(hex: current.palette.accentDeep) }
+    static var waterTop: Color { Color(hex: current.palette.waterTop) }
+    static var waterBottom: Color { Color(hex: current.palette.waterBottom) }
 
     static let canvas = Color.adaptive(light: 0xF2F9FF, dark: 0x0A141F)
     static let card = Color.adaptive(light: 0xFFFFFF, dark: 0x132231)

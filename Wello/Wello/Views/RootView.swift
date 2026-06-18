@@ -6,21 +6,28 @@ import WelloKit
 /// n'est pas terminé OU que le sexe (base EFSA) n'est pas renseigné.
 struct RootView: View {
     @Environment(HydrationStore.self) private var store
+    @Environment(ThemeStore.self) private var theme
     @Query private var profils: [UserProfile]
     @AppStorage("wello.hasOnboarded") private var hasOnboarded = false
+    /// Onglet courant, conservé dans RootView : survit au rebuild déclenché par `.id` au changement de thème.
+    @State private var onglet = 0
 
     /// Vrai si aucun profil ou profil sans sexe renseigné.
     private var sexeManquant: Bool { (profils.first?.sexe) == nil }
 
     var body: some View {
-        TabView {
+        TabView(selection: $onglet) {
             MainView()
                 .tabItem { Label("Aujourd'hui", systemImage: "drop.fill") }
+                .tag(0)
             HistoryView()
                 .tabItem { Label("Historique", systemImage: "calendar") }
+                .tag(1)
             ProfileView()
                 .tabItem { Label("Profil", systemImage: "person.fill") }
+                .tag(2)
         }
+        .id(theme.selected)   // rebuild de l'arbre quand le thème change → réévalue les teintes WelloTheme
         .tint(WelloTheme.accent)
         .fullScreenCover(isPresented: Binding(get: { !hasOnboarded || sexeManquant },
                                               set: { _ in })) {

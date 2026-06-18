@@ -49,6 +49,10 @@ Lier le package local `WelloKit` au target, capability HealthKit, et clés Info.
 `NSLocationWhenInUseUsageDescription`. Détails dans le README.
 Cible WidgetExtension `WelloWidget` : membership des 3 `@Model` + `WelloShared.swift`, lien WelloKit,
 capability App Group `group.Life.Wello` sur l'app ET l'extension.
+Thèmes (Wello+) : les **couleurs** marchent sans étape manuelle ; les **icônes alternatives**
+exigent d'ajouter les assets `AppIcon-Aurore/-Menthe/-Crepuscule` + de déclarer
+`CFBundleIcons`/`CFBundleAlternateIcons` (via `INFOPLIST_KEY_*`). Tant qu'ils manquent,
+`ThemeStore.appliquerIcône` échoue silencieusement. Voir spec `2026-06-18-wello-themes-design.md`.
 
 ## Conventions
 

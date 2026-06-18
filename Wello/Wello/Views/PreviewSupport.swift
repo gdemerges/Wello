@@ -48,5 +48,10 @@ enum PreviewSupport {
     static func drinkCatalog() -> DrinkCatalog {
         DrinkCatalog(defaults: UserDefaults(suiteName: "preview.drinks") ?? .standard)
     }
+
+    /// ThemeStore sur un domaine UserDefaults éphémère (previews isolées du réel).
+    static func themeStore() -> ThemeStore {
+        ThemeStore(defaults: UserDefaults(suiteName: "preview.theme") ?? .standard)
+    }
 }
 #endif

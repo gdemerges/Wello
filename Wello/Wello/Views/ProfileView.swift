@@ -9,6 +9,7 @@ struct ProfileView: View {
     @Query private var profils: [UserProfile]
     @Environment(EntitlementStore.self) private var entitlements
     @Environment(DrinkCatalog.self) private var drinks
+    @Environment(ThemeStore.self) private var theme
     @State private var paywall = false
 
     private var profil: UserProfile? { profils.first }
@@ -66,6 +67,7 @@ struct ProfileView: View {
                     .accessibilityLabel(entitlements.isUnlocked(.unlimitedHistory) ? "Wello+, actif" : "Wello+, débloquer tout")
                     .accessibilityHint(entitlements.isUnlocked(.unlimitedHistory) ? "" : "Ouvre l'offre Wello+")
                 }
+                themeSection
                 Section {
                     if entitlements.isUnlocked(.customDrinks) {
                         ForEach(DrinkType.allCases.filter { $0 != .water }, id: \.self) { drink in
@@ -267,6 +269,64 @@ struct ProfileView: View {
         }
     }
 
+    /// Section de choix du thème de couleur (Wello+). `glacier` gratuit ; les autres → paywall si verrouillés.
+    private var themeSection: some View {
+        Section {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 16) {
+                    ForEach(AppTheme.allCases) { t in
+                        themeSwatch(t)
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+        } header: {
+            Text("Thème")
+        } footer: {
+            Text("Personnalise la couleur de Wello. Inclus dans Wello+ (Glacier reste gratuit).")
+                .font(.system(.caption, design: .rounded))
+        }
+    }
+
+    /// Pastille d'un thème : disque en dégradé d'accent, coché si actif, cadenas si verrouillé.
+    private func themeSwatch(_ t: AppTheme) -> some View {
+        let verrouillé = !t.estGratuit && !entitlements.isUnlocked(.themes)
+        let actif = theme.selected == t
+        return Button {
+            if verrouillé { paywall = true } else { theme.select(t) }
+        } label: {
+            VStack(spacing: 6) {
+                ZStack {
+                    Circle()
+                        .fill(LinearGradient(colors: [Color(hex: t.palette.accent),
+                                                      Color(hex: t.palette.accentDeep)],
+                                             startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .frame(width: 44, height: 44)
+                        .overlay(Circle().strokeBorder(actif ? WelloTheme.ink : .clear, lineWidth: 2.5))
+                    if verrouillé {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(.white)
+                            .shadow(color: .black.opacity(0.3), radius: 1)
+                    } else if actif {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(.white)
+                            .shadow(color: .black.opacity(0.3), radius: 1)
+                    }
+                }
+                Text(t.label)
+                    .font(.system(.caption, design: .rounded).weight(actif ? .bold : .regular))
+                    .foregroundStyle(actif ? WelloTheme.ink : WelloTheme.inkSoft)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Thème \(t.label)\(verrouillé ? ", verrouillé" : "")\(actif ? ", actif" : "")")
+        .accessibilityHint(verrouillé ? "Ouvre l'offre Wello+" : (actif ? "" : "Appliquer ce thème"))
+    }
+
     /// Libellé de ligne avec pastille d'icône colorée et valeur optionnelle.
     private func label(_ titre: String, _ valeur: String?, icon: String, teinte: Color) -> some View {
         HStack(spacing: 12) {
@@ -294,6 +354,7 @@ struct ProfileView: View {
         .environment(PreviewSupport.store(container))
         .environment(PreviewSupport.entitlements(.free))
         .environment(PreviewSupport.drinkCatalog())
+        .environment(PreviewSupport.themeStore())
 }
 
 #Preview("Wello+") {
@@ -303,5 +364,6 @@ struct ProfileView: View {
         .environment(PreviewSupport.store(container))
         .environment(PreviewSupport.entitlements(.plus))
         .environment(PreviewSupport.drinkCatalog())
+        .environment(PreviewSupport.themeStore())
 }
 #endif
