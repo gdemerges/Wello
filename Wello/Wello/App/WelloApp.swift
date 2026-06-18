@@ -10,6 +10,7 @@ struct WelloApp: App {
     @State private var store: HydrationStore
     @State private var entitlements: EntitlementStore
     @State private var drinks: DrinkCatalog
+    @State private var theme: ThemeStore
     /// Délégué des notifications, retenu ici (la propriété `delegate` du centre est faible).
     private let notifDelegate: NotificationCoordinator
 
@@ -29,6 +30,7 @@ struct WelloApp: App {
         _store = State(initialValue: store)
         _entitlements = State(initialValue: entitlements)
         _drinks = State(initialValue: DrinkCatalog())
+        _theme = State(initialValue: ThemeStore())
 
         // Délégué des notifications branché sur le même store (actions directes).
         let delegate = NotificationCoordinator(store: store)
@@ -43,7 +45,11 @@ struct WelloApp: App {
                 .environment(store)
                 .environment(entitlements)
                 .environment(drinks)
-                .task { await entitlements.démarrer() }
+                .environment(theme)
+                .task {
+                    await entitlements.démarrer()
+                    theme.enforceEntitlement(unlocked: entitlements.isUnlocked(.themes))
+                }
         }
         .modelContainer(container)
     }
