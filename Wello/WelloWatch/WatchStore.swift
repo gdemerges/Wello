@@ -30,7 +30,10 @@ final class WatchStore {
     var quickAdds: [Int] { état.quickAdds }
 
     /// Demande l'accès HealthKit et lit l'énergie active (recalcul autonome de l'objectif).
+    /// Renvoie aussi les prises encore non acquittées (débloque celles coincées par une file
+    /// `transferUserInfo` lente) ; la dédup `watchUUID` côté iPhone rend ce renvoi inoffensif.
     func démarrer() async {
+        for prise in état.prisesEnAttente { connectivity.envoyer(prise) }
         await healthKit.requestAuthorization()
         état.mettreÀJourÉnergie(await healthKit.énergieActiveDuJour())
     }

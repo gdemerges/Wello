@@ -35,6 +35,11 @@ extension WatchConnectivityService: WCSessionDelegate {
         if let prise = PriseWatch(dictionnaire: userInfo) { onPriseDistante?(prise) }
     }
 
+    // Canal temps réel (iPhone joignable) : même charge utile que `transferUserInfo`.
+    func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
+        if let prise = PriseWatch(dictionnaire: message) { onPriseDistante?(prise) }
+    }
+
     // Requis sur iOS (gestion du changement de Watch jumelée).
     func sessionDidBecomeInactive(_ session: WCSession) {}
     func sessionDidDeactivate(_ session: WCSession) { session.activate() }

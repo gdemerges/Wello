@@ -20,17 +20,9 @@ final class WatchConnectivityClient: NSObject, @unchecked Sendable {
         session?.activate()
     }
 
-    /// Envoie une prise à l'iPhone. Double canal : `transferUserInfo` (file garantie, survit au
-    /// hors-ligne) **et** `sendMessage` instantané quand l'iPhone est joignable (latence ~nulle,
-    /// fiable même en simulateur). La déduplication par `watchUUID` côté iPhone rend la double
-    /// livraison inoffensive.
+    /// Envoie une prise à l'iPhone (mise en file si injoignable).
     func envoyer(_ prise: PriseWatch) {
-        guard let session else { return }
-        let dict = prise.dictionnaire()
-        session.transferUserInfo(dict)
-        if session.isReachable {
-            session.sendMessage(dict, replyHandler: nil, errorHandler: nil)
-        }
+        session?.transferUserInfo(prise.dictionnaire())
     }
 }
 
