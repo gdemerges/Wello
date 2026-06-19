@@ -1,0 +1,69 @@
+import Foundation
+import SwiftUI
+import WelloKit
+
+/// Orchestrateur de l'app Watch. Détient l'`ÉtatHydratationWatch` (réconciliation pure), persiste
+/// la file de prises locales (survit au relaunch), pousse les prises à l'iPhone et applique les
+/// snapshots reçus. Source d'affichage : `progress`/`configuré`/`quickAdds`.
+@MainActor
+@Observable
+final class WatchStore {
+    private(set) var état = ÉtatHydratationWatch()
+
+    private let connectivity: WatchConnectivityClient
+    private let healthKit: HealthKitWatchService
+    private let défauts = UserDefaults.standard
+    private static let cléPrises = "wello.watch.prisesLocales"
+
+    init(connectivity: WatchConnectivityClient = .init(),
+         healthKit: HealthKitWatchService = .init()) {
+        self.connectivity = connectivity
+        self.healthKit = healthKit
+        état = ÉtatHydratationWatch(prisesLocales: chargerPrises())
+        connectivity.onSnapshot = { [weak self] snap in
+            Task { @MainActor in self?.appliquer(snap) }
+        }
+    }
+
+    var configuré: Bool { état.configuré }
+    var progress: WidgetProgress { état.progress }
+    var quickAdds: [Int] { état.quickAdds }
+
+    /// Demande l'accès HealthKit et lit l'énergie active (recalcul autonome de l'objectif).
+    func démarrer() async {
+        await healthKit.requestAuthorization()
+        état.mettreÀJourÉnergie(await healthKit.énergieActiveDuJour())
+    }
+
+    /// Ajoute une prise : affichage optimiste + envoi à l'iPhone + persistance.
+    func ajouter(ml: Int) {
+        let prise = PriseWatch(amountML: ml)
+        état.ajouterPrise(prise)
+        connectivity.envoyer(prise)
+        sauvegarderPrises()
+    }
+
+    /// Annule la dernière prise locale non encore acquittée (no-op sinon).
+    func annulerDernière() {
+        état.annulerDernièreEnAttente()
+        sauvegarderPrises()
+    }
+
+    private func appliquer(_ snap: WatchSyncSnapshot) {
+        état.appliquer(snap)
+        sauvegarderPrises()   // purge des acquittées persistée
+    }
+
+    // MARK: Persistance de la file locale
+
+    private func chargerPrises() -> [PriseWatch] {
+        guard let data = défauts.data(forKey: Self.cléPrises),
+              let prises = try? JSONDecoder().decode([PriseWatch].self, from: data) else { return [] }
+        return prises
+    }
+
+    private func sauvegarderPrises() {
+        let data = try? JSONEncoder().encode(état.prisesLocales)
+        défauts.set(data, forKey: Self.cléPrises)
+    }
+}
