@@ -24,6 +24,11 @@ struct MockLocationService: LocationServicing {
     func coordonnéesActuelles() async -> (latitude: Double, longitude: Double)? { coords }
 }
 
+/// Mock du pont Watch : ne fait rien (previews, tests, appareils sans Watch).
+struct MockWatchSync: WatchSyncing {
+    func pousser(_ snapshot: WatchSyncSnapshot) {}
+}
+
 struct MockNotificationService: NotificationServicing {
     func requestAuthorization() async -> Bool { true }
     func autorisationAccordée() async -> Bool { true }

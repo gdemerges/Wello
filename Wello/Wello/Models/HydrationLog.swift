@@ -18,6 +18,9 @@ final class HydrationLog {
     /// Coefficient d'hydratation snapshoté au moment de la prise. N'est jamais réécrit ensuite
     /// (éditer un coefficient au Profil ne modifie pas l'historique).
     var coefficient: Double = 1.0
+    /// UUID de la `PriseWatch` d'origine, pour les prises saisies au poignet (dédup WCSession).
+    /// nil pour toute autre source. Défaut inline = migration légère SwiftData.
+    var watchUUID: UUID? = nil
 
     /// Boisson typée (repli sur l'eau si la valeur stockée est inconnue).
     var drink: DrinkType { DrinkType(rawValue: drinkType) ?? .water }
@@ -27,12 +30,14 @@ final class HydrationLog {
 
     init(amountML: Int, loggedAt: Date = .now, source: String = "app",
          healthKitUUID: UUID? = nil,
-         drinkType: String = "water", coefficient: Double = 1.0) {
+         drinkType: String = "water", coefficient: Double = 1.0,
+         watchUUID: UUID? = nil) {
         self.amountML = amountML
         self.loggedAt = loggedAt
         self.source = source
         self.healthKitUUID = healthKitUUID
         self.drinkType = drinkType
         self.coefficient = coefficient
+        self.watchUUID = watchUUID
     }
 }

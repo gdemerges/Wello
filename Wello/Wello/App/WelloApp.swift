@@ -19,14 +19,20 @@ struct WelloApp: App {
         self.container = container
         // Services réels injectés dans l'orchestrateur.
         let entitlements = EntitlementStore(store: StoreKitService())
+        let watchSync = WatchConnectivityService()
         let store = HydrationStore(
             modelContext: container.mainContext,
             healthKit: HealthKitService(),
             weather: WeatherService(),
             location: LocationService(),
             notifications: NotificationService(),
+            watchSync: watchSync,
             rappelsAdaptatifsDébloqués: { entitlements.isUnlocked(.adaptiveReminders) }
         )
+        // Prises saisies au poignet : ingérées par le store (sur le MainActor).
+        watchSync.onPriseDistante = { [store] prise in
+            Task { @MainActor in await store.enregistrerPriseDistante(prise) }
+        }
         _store = State(initialValue: store)
         _entitlements = State(initialValue: entitlements)
         _drinks = State(initialValue: DrinkCatalog())

@@ -120,4 +120,15 @@ Widgets d'écran d'accueil (petit : anneau d'objectif ; moyen : barre + boutons 
 +150/+250/+500) et accessoire d'écran verrouillé (anneau). Partage de données app↔widget via
 l'App Group `group.Life.Wello` (store SwiftData unique, migré depuis le store local au premier
 lancement). L'ajout rapide écrit une prise sans ouvrir l'app (App Intents, iOS 17).
-watchOS / complication Watch restent prévus en Phase 2.
+
+## App Apple Watch (Phase 2 — livrée)
+
+App Watch autonome : jauge de progression + ajout rapide d'eau au poignet, utilisable hors-ligne.
+Synchronisation **sans CloudKit** entre deux appareils via **WatchConnectivity** : l'iPhone pousse
+l'objectif/consommé du jour (mirroir coalescé, `updateApplicationContext`) ; la Watch met ses prises
+en file (`transferUserInfo`, livraison garantie) et les envoie à l'iPhone, **unique écrivain
+HealthKit** (déduplication par `watchUUID`, pas de double compte). La Watch lit l'énergie active
+(HealthKit) pour faire monter la part « activité » de l'objectif en séance, même iPhone absent. La
+réconciliation du consommé (`consommé = total iPhone + prises locales non acquittées`) est une
+logique pure testée dans WelloKit (`ÉtatHydratationWatch`). **Complication de cadran** : prévue
+dans un second temps.
