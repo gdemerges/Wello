@@ -34,6 +34,7 @@ final class HydrationStore {
     private let weather: WeatherServicing
     private let location: LocationServicing
     private let notifications: NotificationServicing
+    private let watchSync: WatchSyncing
     private let calculator = HydrationCalculator()
     private let planner = AdaptiveReminderPlanner()
     /// Lit le palier au moment de planifier (injecté pour découpler le store de l'EntitlementStore).
@@ -68,12 +69,14 @@ final class HydrationStore {
          weather: WeatherServicing,
          location: LocationServicing,
          notifications: NotificationServicing,
+         watchSync: WatchSyncing = MockWatchSync(),
          rappelsAdaptatifsDébloqués: @escaping @MainActor () -> Bool = { false }) {
         self.modelContext = modelContext
         self.healthKit = healthKit
         self.weather = weather
         self.location = location
         self.notifications = notifications
+        self.watchSync = watchSync
         self.rappelsAdaptatifsDébloqués = rappelsAdaptatifsDébloqués
     }
 
@@ -124,6 +127,7 @@ final class HydrationStore {
         breakdown = resultat
         upsertDailyGoal(resultat)
         rechargerWidgets()
+        pousserSnapshotWatch()
 
         await importerEauHealthKit()
 
@@ -227,6 +231,7 @@ final class HydrationStore {
             await planifierSelonPalier(objectifML: objectif)
         }
         rechargerWidgets()
+        pousserSnapshotWatch()
     }
 
     /// Annule la prise d'eau la plus récente du jour : retire le HydrationLog (la jauge baisse)
@@ -249,6 +254,7 @@ final class HydrationStore {
             await planifierSelonPalier(objectifML: objectif)
         }
         rechargerWidgets()
+        pousserSnapshotWatch()
     }
 
     /// Supprime une prise précise (depuis le détail d'un jour) : SwiftData + Santé (si saisie
@@ -263,6 +269,7 @@ final class HydrationStore {
             await planifierSelonPalier(objectifML: objectif)
         }
         rechargerWidgets()
+        pousserSnapshotWatch()
     }
 
     /// Replanifie les rappels selon le palier : `plus` (avec assez de données) → adaptatif ;
@@ -333,6 +340,55 @@ final class HydrationStore {
     /// ou de l'objectif du jour.
     private func rechargerWidgets() {
         WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    /// Construit le mirroir d'état destiné à la Watch à partir de l'objectif/consommé du jour,
+    /// du profil minimal et des `id` de prises Watch déjà enregistrées (acquittées).
+    private func snapshotWatch() -> WatchSyncSnapshot {
+        let profil = profilCourant()
+        let début = Calendar.current.startOfDay(for: .now)
+        let desc = FetchDescriptor<HydrationLog>(
+            predicate: #Predicate { $0.loggedAt >= début && $0.watchUUID != nil })
+        let acquittés = ((try? modelContext.fetch(desc)) ?? []).compactMap(\.watchUUID)
+        return WatchSyncSnapshot(
+            objectifML: breakdown?.totalML ?? 0,
+            consomméML: consomméAujourdhui(),
+            quickAdds: profil.quickAdds,
+            configuré: breakdown != nil,
+            sexeRaw: profil.sexe?.rawValue,
+            etatPhysioRaw: profil.etatPhysio == .aucun ? nil : profil.etatPhysio.rawValue,
+            renalBonusML: profil.renalBonusEffectifML,
+            activitySensitivity: profil.activitySensitivity,
+            weatherSensitivity: profil.weatherSensitivity,
+            manualAdjustmentML: profil.manualAdjustmentML,
+            acquittés: acquittés,
+            générémLe: .now)
+    }
+
+    /// Pousse l'état courant vers la Watch (à appeler après toute mutation, comme `rechargerWidgets`).
+    private func pousserSnapshotWatch() {
+        watchSync.pousser(snapshotWatch())
+    }
+
+    /// Enregistre une prise reçue de la Watch (déduplication par `watchUUID`). Écrit l'eau dans
+    /// Santé.app (l'iPhone reste l'unique écrivain HealthKit), replanifie les rappels, recharge
+    /// widgets + Watch (avec l'`id` désormais acquitté).
+    func enregistrerPriseDistante(_ prise: PriseWatch) async {
+        let id = prise.id
+        let déjàVue = FetchDescriptor<HydrationLog>(predicate: #Predicate { $0.watchUUID == id })
+        if let existe = try? modelContext.fetch(déjàVue), !existe.isEmpty {
+            pousserSnapshotWatch()   // déjà enregistrée : re-acquitter suffit
+            return
+        }
+        let entrée = HydrationLog(amountML: prise.amountML, loggedAt: prise.loggedAt, source: "watch",
+                                  drinkType: "water", coefficient: 1.0, watchUUID: id)
+        modelContext.insert(entrée)
+        if entrée.effectiveML > 0 { await healthKit.écrireEau(ml: entrée.effectiveML, date: entrée.loggedAt) }
+        if let objectif = breakdown?.totalML {
+            await planifierSelonPalier(objectifML: objectif)
+        }
+        rechargerWidgets()
+        pousserSnapshotWatch()
     }
 
     private func upsertDailyGoal(_ r: GoalBreakdown) {

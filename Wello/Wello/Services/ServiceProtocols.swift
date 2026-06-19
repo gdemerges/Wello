@@ -41,6 +41,13 @@ protocol LocationServicing: Sendable {
     func coordonnéesActuelles() async -> (latitude: Double, longitude: Double)?
 }
 
+/// Pont WatchConnectivity côté iPhone : pousse l'état d'hydratation vers la Watch.
+/// La réception des prises Watch passe par une closure branchée à l'app (cf. WelloApp).
+protocol WatchSyncing: Sendable {
+    /// Pousse le dernier état (mirroir coalescé). No-op si aucune Watch n'est jumelée.
+    func pousser(_ snapshot: WatchSyncSnapshot)
+}
+
 /// Planification des rappels d'hydratation.
 protocol NotificationServicing: Sendable {
     func requestAuthorization() async -> Bool
