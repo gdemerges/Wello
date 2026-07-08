@@ -1,10 +1,12 @@
 import SwiftUI
 import WelloKit
 
-/// Liens légaux requis par l'App Store pour un achat. À remplacer par les vraies URLs.
+/// Liens légaux requis par l'App Store pour un achat.
 /// Force-unwrap sûr : ce sont des constantes ASCII valides (jamais issues d'une saisie).
 enum WelloLinks {
-    static let conditions = URL(string: "https://wello.app/conditions")!
+    /// EULA standard Apple : accepté par App Review, rien à héberger.
+    static let conditions = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
+    /// TODO pré-publication : héberger `docs/legal/privacy-policy.md` et remplacer cette URL.
     static let confidentialité = URL(string: "https://wello.app/confidentialite")!
 }
 
