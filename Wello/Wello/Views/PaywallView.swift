@@ -45,7 +45,7 @@ struct PremiumGateCard: View {
     }
 }
 
-/// Paywall Wello+ : achat unique « lifetime ».
+/// Paywall Wello+ : deux offres au choix — abonnement annuel (avec essai gratuit) ou achat à vie.
 struct PaywallView: View {
     /// Bénéfice mis en avant selon le point d'entrée.
     var bénéfice: String = "Débloque toutes les fonctionnalités"
@@ -53,17 +53,23 @@ struct PaywallView: View {
     @Environment(EntitlementStore.self) private var entitlements
     @Environment(\.dismiss) private var dismiss
 
-    @State private var produit: StoreProduct?
+    @State private var produits: [StoreProduct] = []
+    @State private var sélection: String?
     @State private var enCours = false
     @State private var messageErreur: String?
 
     private static let avantages: [(icon: String, titre: String)] = [
         ("clock.arrow.circlepath", "Historique illimité"),
         ("chart.line.uptrend.xyaxis", "Analyses et tendances"),
+        ("bell.badge.fill", "Rappels adaptatifs"),
         ("cup.and.saucer.fill", "Boissons personnalisées"),
         ("square.and.arrow.up", "Export CSV de l'historique"),
         ("paintbrush.fill", "Thèmes de couleur"),
     ]
+
+    private var produitSélectionné: StoreProduct? {
+        produits.first { $0.id == sélection }
+    }
 
     var body: some View {
         NavigationStack {
@@ -71,6 +77,7 @@ struct PaywallView: View {
                 VStack(spacing: 22) {
                     enTête
                     listeAvantages
+                    offres
                     if let messageErreur {
                         Text(messageErreur)
                             .font(.system(.subheadline, design: .rounded))
@@ -79,6 +86,7 @@ struct PaywallView: View {
                     }
                     boutonAchat
                     boutonRestaurer
+                    mentionAbonnement
                     liensLégaux
                 }
                 .padding()
@@ -91,7 +99,13 @@ struct PaywallView: View {
                     Button("Fermer") { dismiss() }
                 }
             }
-            .task { produit = await entitlements.produit() }
+            .task {
+                produits = await entitlements.produits()
+                // Présélection : l'annuel (offre mise en avant), sinon le premier disponible.
+                if sélection == nil {
+                    sélection = produits.first(where: { $0.kind == .annual })?.id ?? produits.first?.id
+                }
+            }
         }
     }
 
@@ -105,7 +119,7 @@ struct PaywallView: View {
                 .font(.system(.title3, design: .rounded).weight(.bold))
                 .foregroundStyle(WelloTheme.ink)
                 .multilineTextAlignment(.center)
-            Text("Un seul paiement, à vie.")
+            Text("Sans engagement, ou une fois pour toutes.")
                 .font(.system(.subheadline, design: .rounded))
                 .foregroundStyle(WelloTheme.inkSoft)
         }
@@ -130,6 +144,69 @@ struct PaywallView: View {
         }
     }
 
+    /// Les deux offres, sélectionnables (radio). Vide tant que StoreKit n'a pas répondu.
+    @ViewBuilder private var offres: some View {
+        if produits.isEmpty {
+            ProgressView().frame(maxWidth: .infinity).padding(.vertical, 8)
+        } else {
+            VStack(spacing: 12) {
+                ForEach(produits) { carteOffre($0) }
+            }
+        }
+    }
+
+    private func carteOffre(_ p: StoreProduct) -> some View {
+        let choisi = sélection == p.id
+        return Button {
+            sélection = p.id
+        } label: {
+            HStack(spacing: 14) {
+                Image(systemName: choisi ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 22))
+                    .foregroundStyle(choisi ? WelloTheme.accent : WelloTheme.inkSoft.opacity(0.5))
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 8) {
+                        Text(p.displayName)
+                            .font(.system(.headline, design: .rounded))
+                            .foregroundStyle(WelloTheme.ink)
+                        if p.kind == .annual {
+                            Text("Populaire")
+                                .font(.system(.caption2, design: .rounded).weight(.bold))
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 3)
+                                .background(WelloTheme.accent.opacity(0.15), in: Capsule())
+                                .foregroundStyle(WelloTheme.accentDeep)
+                        }
+                    }
+                    Text(sousTitrePrix(p))
+                        .font(.system(.subheadline, design: .rounded))
+                        .foregroundStyle(WelloTheme.inkSoft)
+                }
+                Spacer()
+            }
+            .padding(18)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(WelloTheme.card, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(choisi ? WelloTheme.accent : Color.clear, lineWidth: 2))
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(p.displayName), \(sousTitrePrix(p))")
+        .accessibilityAddTraits(choisi ? [.isSelected, .isButton] : .isButton)
+    }
+
+    /// Ligne de prix sous le nom de l'offre.
+    private func sousTitrePrix(_ p: StoreProduct) -> String {
+        switch p.kind {
+        case .annual:
+            if let intro = p.offreIntro { return "\(intro), puis \(p.displayPrice)/an" }
+            return "\(p.displayPrice)/an"
+        case .lifetime:
+            return "\(p.displayPrice) · paiement unique"
+        }
+    }
+
     private var boutonAchat: some View {
         Button {
             Task { await acheter() }
@@ -138,7 +215,7 @@ struct PaywallView: View {
                 if enCours {
                     ProgressView().tint(.white)
                 } else {
-                    Text(produit.map { "Débloquer — \($0.displayPrice)" } ?? "Débloquer")
+                    Text(titreBoutonAchat)
                         .font(.system(.headline, design: .rounded))
                 }
             }
@@ -149,8 +226,19 @@ struct PaywallView: View {
                         in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
         .buttonStyle(.plain)
-        .disabled(enCours)
-        .accessibilityLabel(produit.map { "Débloquer Wello+ pour \($0.displayPrice)" } ?? "Débloquer Wello+")
+        .disabled(enCours || produitSélectionné == nil)
+        .accessibilityLabel(titreBoutonAchat)
+    }
+
+    /// Libellé du bouton principal selon l'offre choisie.
+    private var titreBoutonAchat: String {
+        guard let p = produitSélectionné else { return "Débloquer" }
+        switch p.kind {
+        case .annual:
+            return p.offreIntro != nil ? "Commencer l'essai gratuit" : "S'abonner — \(p.displayPrice)/an"
+        case .lifetime:
+            return "Débloquer — \(p.displayPrice)"
+        }
     }
 
     private var boutonRestaurer: some View {
@@ -163,6 +251,14 @@ struct PaywallView: View {
         .disabled(enCours)
     }
 
+    /// Divulgation d'abonnement auto-renouvelable exigée par l'App Store.
+    private var mentionAbonnement: some View {
+        Text("L'abonnement annuel se renouvelle automatiquement sauf annulation au moins 24 h avant la fin de la période en cours ; gère-le ou résilie-le dans les réglages de l'App Store. L'option à vie est un paiement unique, sans renouvellement.")
+            .font(.system(.caption2, design: .rounded))
+            .foregroundStyle(WelloTheme.inkSoft)
+            .multilineTextAlignment(.center)
+    }
+
     private var liensLégaux: some View {
         HStack(spacing: 18) {
             Link("Conditions d'utilisation", destination: WelloLinks.conditions)
@@ -173,11 +269,12 @@ struct PaywallView: View {
     }
 
     private func acheter() async {
+        guard let id = sélection else { return }
         enCours = true
         messageErreur = nil
         defer { enCours = false }
         do {
-            switch try await entitlements.acheterPlus() {
+            switch try await entitlements.acheter(id) {
             case .success: dismiss()
             case .userCancelled: break
             case .pending: messageErreur = "Achat en attente de validation."

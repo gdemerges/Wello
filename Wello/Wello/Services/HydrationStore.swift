@@ -37,6 +37,8 @@ final class HydrationStore {
     private let watchSync: WatchSyncing
     private let calculator = HydrationCalculator()
     private let planner = AdaptiveReminderPlanner()
+    /// Live Activity de progression du jour (écran verrouillé + Dynamic Island). Inerte si désactivée.
+    private let liveActivity = LiveActivityManager()
     /// Lit le palier au moment de planifier (injecté pour découpler le store de l'EntitlementStore).
     private let rappelsAdaptatifsDébloqués: @MainActor () -> Bool
 
@@ -128,6 +130,7 @@ final class HydrationStore {
         upsertDailyGoal(resultat)
         rechargerWidgets()
         pousserSnapshotWatch()
+        rafraîchirLiveActivité()
 
         await importerEauHealthKit()
 
@@ -232,6 +235,7 @@ final class HydrationStore {
         }
         rechargerWidgets()
         pousserSnapshotWatch()
+        rafraîchirLiveActivité()
     }
 
     /// Annule la prise d'eau la plus récente du jour : retire le HydrationLog (la jauge baisse)
@@ -255,6 +259,7 @@ final class HydrationStore {
         }
         rechargerWidgets()
         pousserSnapshotWatch()
+        rafraîchirLiveActivité()
     }
 
     /// Supprime une prise précise (depuis le détail d'un jour) : SwiftData + Santé (si saisie
@@ -270,6 +275,7 @@ final class HydrationStore {
         }
         rechargerWidgets()
         pousserSnapshotWatch()
+        rafraîchirLiveActivité()
     }
 
     /// Replanifie les rappels selon le palier : `plus` (avec assez de données) → adaptatif ;
@@ -370,6 +376,11 @@ final class HydrationStore {
         watchSync.pousser(snapshotWatch())
     }
 
+    /// Actualise la Live Activity du jour avec le consommé/objectif courants (démarre au besoin).
+    private func rafraîchirLiveActivité() {
+        liveActivity.mettreÀJour(consomméML: consomméAujourdhui(), objectifML: breakdown?.totalML ?? 0)
+    }
+
     /// Enregistre une prise reçue de la Watch (déduplication par `watchUUID`). Écrit l'eau dans
     /// Santé.app (l'iPhone reste l'unique écrivain HealthKit), replanifie les rappels, recharge
     /// widgets + Watch (avec l'`id` désormais acquitté).
@@ -389,6 +400,7 @@ final class HydrationStore {
         }
         rechargerWidgets()
         pousserSnapshotWatch()
+        rafraîchirLiveActivité()
     }
 
     private func upsertDailyGoal(_ r: GoalBreakdown) {

@@ -2,10 +2,20 @@ import Foundation
 import StoreKit
 import WelloKit
 
+/// Type d'offre Wello+ présentée au paywall.
+enum ProductKind: Sendable, Equatable {
+    case annual      // abonnement auto-renouvelable
+    case lifetime    // achat unique non-consommable
+}
+
 /// Produit premium tel qu'affiché à l'utilisateur (prix localisé par StoreKit).
-struct StoreProduct: Sendable, Equatable {
+struct StoreProduct: Sendable, Equatable, Identifiable {
+    let id: String
+    let kind: ProductKind
     let displayName: String
     let displayPrice: String
+    /// Libellé d'offre d'introduction (ex. « Essai gratuit : 1 semaine »), nil si aucune.
+    let offreIntro: String?
 }
 
 /// Issue d'une tentative d'achat.
@@ -19,19 +29,23 @@ enum PurchaseOutcome: Sendable, Equatable {
 protocol StoreServicing: Sendable {
     /// Statut d'entitlement courant (lecture locale StoreKit, valide offline après 1ʳᵉ synchro).
     func statutActuel() async -> EntitlementStatus
-    /// Produit « Wello+ » avec prix localisé, ou nil si indisponible (réseau/StoreKit).
-    func produitPlus() async -> StoreProduct?
-    /// Lance l'achat du produit Wello+.
-    func acheter() async throws -> PurchaseOutcome
+    /// Produits Wello+ disponibles (abonnement annuel + achat à vie), prix localisés.
+    /// Annuel d'abord (mis en avant), puis à vie. Vide si indisponible (réseau/StoreKit).
+    func produits() async -> [StoreProduct]
+    /// Lance l'achat du produit d'identifiant donné.
+    func acheter(_ productID: String) async throws -> PurchaseOutcome
     /// Restaure les achats puis renvoie le statut résultant.
     func restaurer() async -> EntitlementStatus
-    /// Flux des changements de transaction (achats/remboursements hors app).
+    /// Flux des changements de transaction (achats/renouvellements/remboursements hors app).
     func observerTransactions() -> AsyncStream<EntitlementStatus>
 }
 
-/// Identifiant du produit non-consommable (doit correspondre à App Store Connect + Wello.storekit).
+/// Identifiants des produits (doivent correspondre à App Store Connect + Wello.storekit).
+/// Wello+ est accordé par l'abonnement annuel OU l'achat à vie : n'importe lequel actif suffit.
 enum StoreIDs {
+    static let plusAnnual = "com.wello.plus.annual"
     static let plusLifetime = "com.wello.plus.lifetime"
+    static let tous: Set<String> = [plusAnnual, plusLifetime]
 }
 
 /// Implémentation réelle via StoreKit 2.
@@ -40,7 +54,7 @@ struct StoreKitService: StoreServicing {
     func statutActuel() async -> EntitlementStatus {
         for await result in Transaction.currentEntitlements {
             if case .verified(let t) = result,
-               t.productID == StoreIDs.plusLifetime,
+               StoreIDs.tous.contains(t.productID),
                t.revocationDate == nil {
                 return .plus
             }
@@ -48,15 +62,16 @@ struct StoreKitService: StoreServicing {
         return .free
     }
 
-    func produitPlus() async -> StoreProduct? {
-        guard let p = try? await Product.products(for: [StoreIDs.plusLifetime]).first else {
-            return nil
-        }
-        return StoreProduct(displayName: p.displayName, displayPrice: p.displayPrice)
+    func produits() async -> [StoreProduct] {
+        guard let produits = try? await Product.products(for: StoreIDs.tous) else { return [] }
+        // Ordre stable : annuel d'abord (mis en avant), puis à vie.
+        return produits
+            .map(descripteur)
+            .sorted { classement($0.kind) < classement($1.kind) }
     }
 
-    func acheter() async throws -> PurchaseOutcome {
-        guard let produit = try await Product.products(for: [StoreIDs.plusLifetime]).first else {
+    func acheter(_ productID: String) async throws -> PurchaseOutcome {
+        guard let produit = try await Product.products(for: [productID]).first else {
             return .pending
         }
         switch try await produit.purchase() {
@@ -87,16 +102,40 @@ struct StoreKitService: StoreServicing {
         AsyncStream { continuation in
             let task = Task {
                 for await result in Transaction.updates {
-                    switch result {
-                    case .verified(let t):
-                        await t.finish()
-                        continuation.yield(t.revocationDate == nil ? .plus : .free)
-                    case .unverified(let t, _):
-                        await t.finish()   // vide la file ; pas d'accès sur transaction non vérifiée
-                    }
+                    if case .verified(let t) = result { await t.finish() }
+                    // Renouvellement, expiration ou remboursement : on réévalue l'entitlement
+                    // complet (les deux produits confondus) plutôt que d'inférer d'une seule transaction.
+                    continuation.yield(await statutActuel())
                 }
             }
             continuation.onTermination = { _ in task.cancel() }
         }
+    }
+
+    /// Convertit un `Product` StoreKit en modèle d'affichage, avec libellé d'offre d'intro.
+    private func descripteur(_ produit: Product) -> StoreProduct {
+        let kind: ProductKind = (produit.id == StoreIDs.plusAnnual) ? .annual : .lifetime
+        return StoreProduct(id: produit.id, kind: kind, displayName: produit.displayName,
+                            displayPrice: produit.displayPrice, offreIntro: libelléIntro(produit))
+    }
+
+    private func classement(_ k: ProductKind) -> Int { k == .annual ? 0 : 1 }
+
+    /// Libellé de l'offre d'introduction gratuite d'un abonnement (« Essai gratuit : 1 semaine »),
+    /// nil si le produit n'a pas d'essai gratuit.
+    private func libelléIntro(_ produit: Product) -> String? {
+        guard let offre = produit.subscription?.introductoryOffer,
+              offre.paymentMode == .freeTrial else { return nil }
+        let période = offre.period
+        let n = période.value
+        let unité: String
+        switch période.unit {
+        case .day: unité = n > 1 ? "jours" : "jour"
+        case .week: unité = n > 1 ? "semaines" : "semaine"
+        case .month: unité = "mois"
+        case .year: unité = n > 1 ? "ans" : "an"
+        @unknown default: unité = "jours"
+        }
+        return "Essai gratuit : \(n) \(unité)"
     }
 }

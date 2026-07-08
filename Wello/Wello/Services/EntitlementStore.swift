@@ -47,14 +47,14 @@ final class EntitlementStore {
         }
     }
 
-    /// Produit Wello+ (prix localisé) pour le paywall.
-    func produit() async -> StoreProduct? {
-        await store.produitPlus()
+    /// Produits Wello+ (prix localisés) pour le paywall : abonnement annuel + achat à vie.
+    func produits() async -> [StoreProduct] {
+        await store.produits()
     }
 
-    /// Lance l'achat ; met à jour le statut en cas de succès.
-    func acheterPlus() async throws -> PurchaseOutcome {
-        let résultat = try await store.acheter()
+    /// Lance l'achat du produit donné ; met à jour le statut en cas de succès.
+    func acheter(_ productID: String) async throws -> PurchaseOutcome {
+        let résultat = try await store.acheter(productID)
         if résultat == .success { appliquer(.plus) }
         return résultat
     }

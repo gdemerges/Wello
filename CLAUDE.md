@@ -52,6 +52,16 @@ Lier le package local `WelloKit` au target, capability HealthKit, et clés Info.
 `NSLocationWhenInUseUsageDescription`. Détails dans le README.
 Cible WidgetExtension `WelloWidget` : membership des 3 `@Model` + `WelloShared.swift`, lien WelloKit,
 capability App Group `group.Life.Wello` sur l'app ET l'extension.
+Live Activity (progression du jour, écran verrouillé + Dynamic Island) : clé Info.plist
+`NSSupportsLiveActivities = YES` sur l'app iPhone ; `HydrationActivityAttributes.swift`
+(dossier `App/`) doit être membre des DEUX cibles (app + `WelloWidget`) ; `HydrationLiveActivity.swift`
+appartient à `WelloWidget` (déjà déclaré dans `WelloWidgetBundle`). L'app démarre/actualise
+l'activité via `LiveActivityManager` (cible app) ; inerte si l'utilisateur désactive les Live
+Activities. Aucune capability dédiée.
+Monétisation : deux produits StoreKit à créer dans **App Store Connect** — abonnement
+auto-renouvelable annuel `com.wello.plus.annual` (4,99 €, essai gratuit 7 j) dans un groupe
+d'abonnement, et non-consommable `com.wello.plus.lifetime` (12,99 €). `Wello.storekit` reflète
+déjà les deux pour le test local. Wello+ est accordé si l'un OU l'autre est actif.
 Cible watchOS `WelloWatch` : sources dans le **dossier synchronisé** `Wello/WelloWatch Watch App/`
 (c'est CE dossier que la cible compile, pas `Wello/WelloWatch/` — ne pas recréer de doublon), lien WelloKit, capability
 HealthKit + `NSHealthShareUsageDescription` (lecture énergie active). `WatchConnectivityService.swift`

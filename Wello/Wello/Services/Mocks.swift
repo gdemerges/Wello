@@ -43,10 +43,13 @@ struct MockNotificationService: NotificationServicing {
 struct MockStoreService: StoreServicing {
     var statut: EntitlementStatus = .free
     func statutActuel() async -> EntitlementStatus { statut }
-    func produitPlus() async -> StoreProduct? {
-        StoreProduct(displayName: "Wello+", displayPrice: "2,99 €")
+    func produits() async -> [StoreProduct] {
+        [StoreProduct(id: StoreIDs.plusAnnual, kind: .annual, displayName: "Wello+ annuel",
+                      displayPrice: "4,99 €", offreIntro: "Essai gratuit : 1 semaine"),
+         StoreProduct(id: StoreIDs.plusLifetime, kind: .lifetime, displayName: "Wello+ à vie",
+                      displayPrice: "12,99 €", offreIntro: nil)]
     }
-    func acheter() async throws -> PurchaseOutcome { .success }
+    func acheter(_ productID: String) async throws -> PurchaseOutcome { .success }
     func restaurer() async -> EntitlementStatus { statut }
     func observerTransactions() -> AsyncStream<EntitlementStatus> {
         AsyncStream { $0.finish() }

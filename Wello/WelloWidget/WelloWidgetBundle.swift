@@ -6,5 +6,6 @@ import SwiftUI
 struct WelloWidgetBundle: WidgetBundle {
     var body: some Widget {
         WelloWidget()
+        HydrationLiveActivity()
     }
 }

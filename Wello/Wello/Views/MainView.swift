@@ -10,11 +10,14 @@ struct MainView: View {
     /// Tous les logs (tri récent→ancien) ; on filtre « aujourd'hui » à l'affichage pour rester
     /// correct au passage de minuit sans prédicat figé à l'init.
     @Query(sort: \HydrationLog.loggedAt, order: .reverse) private var tousLogs: [HydrationLog]
+    @Query(sort: \DailyGoal.date, order: .reverse) private var objectifs: [DailyGoal]
     @Query private var profils: [UserProfile]
     /// Reflète l'état « rappels coupés pour aujourd'hui » (retour visuel de la cloche).
     @State private var rappelsCoupésAujourdhui = false
     @State private var afficheSaisie = false
     @State private var fête = false
+    @State private var messageFête = "Objectif atteint ! 🎉"
+    @State private var fêteEstPalier = false
 
     private var logsDuJour: [HydrationLog] {
         tousLogs.filter { Calendar.current.isDateInToday($0.loggedAt) }
@@ -23,6 +26,22 @@ struct MainView: View {
     private var objectif: Int { store.breakdown?.totalML ?? 0 }
     private var objectifAtteint: Bool { objectif > 0 && consommé >= objectif }
     private var montants: [Int] { profils.first?.quickAdds ?? [150, 250, 500] }
+
+    /// Série d'objectifs atteints en cours, aujourd'hui compris s'il est atteint.
+    /// On compte les jours passés (contigus, récent→ancien) à partir des `DailyGoal`, puis on
+    /// ajoute aujourd'hui si l'objectif du jour est atteint. Fonction pure déléguée à WelloKit.
+    private var sérieCourante: Int {
+        let cal = Calendar.current
+        var conso: [Date: Int] = [:]
+        for log in tousLogs { conso[cal.startOfDay(for: log.loggedAt), default: 0] += log.effectiveML }
+        let aujourdhui = cal.startOfDay(for: .now)
+        let passés = objectifs.compactMap { g -> DailyTotal? in
+            let d = cal.startOfDay(for: g.date)
+            guard d < aujourdhui else { return nil }
+            return DailyTotal(consumedML: clampedDayTotal(conso[d] ?? 0), goalML: g.totalML)
+        }
+        return HydrationStats.currentStreak(passés) + (objectifAtteint ? 1 : 0)
+    }
 
     var body: some View {
         NavigationStack {
@@ -38,6 +57,10 @@ struct MainView: View {
                         WaterMorePill { afficheSaisie = true }
                     }
                     .padding(.horizontal)
+
+                    if sérieCourante >= 2 {
+                        StreakChip(jours: sérieCourante)
+                    }
 
                     if let dernière = logsDuJour.first {
                         Button {
@@ -116,26 +139,56 @@ struct MainView: View {
 
     @ViewBuilder private var bannièreFête: some View {
         if fête {
-            Label("Objectif atteint ! 🎉", systemImage: "checkmark.seal.fill")
+            Label(messageFête, systemImage: fêteEstPalier ? "flame.fill" : "checkmark.seal.fill")
                 .font(.system(.headline, design: .rounded))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 18)
                 .padding(.vertical, 12)
-                .background(WelloTheme.accentGradient, in: Capsule())
-                .shadow(color: WelloTheme.accent.opacity(0.4), radius: 10, y: 4)
+                .background(fêteEstPalier ? AnyShapeStyle(orangeGradient) : AnyShapeStyle(WelloTheme.accentGradient),
+                            in: Capsule())
+                .shadow(color: (fêteEstPalier ? Color.orange : WelloTheme.accent).opacity(0.4), radius: 10, y: 4)
                 .padding(.top, 8)
                 .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
         }
     }
 
+    /// Dégradé chaud réservé aux célébrations de paliers de série.
+    private var orangeGradient: LinearGradient {
+        LinearGradient(colors: [.orange, .pink], startPoint: .topLeading, endPoint: .bottomTrailing)
+    }
+
     private func déclencherFête() {
-        AccessibilityNotification.Announcement("Objectif d'hydratation atteint").post()
+        // Une série qui atteint pile un palier (7, 30, 100… jours) déclenche une célébration renforcée.
+        if let palier = StreakMilestone.palier(pour: sérieCourante) {
+            messageFête = "\(palier) jours d'affilée ! 🔥"
+            fêteEstPalier = true
+            AccessibilityNotification.Announcement("Série de \(palier) jours d'affilée atteinte").post()
+        } else {
+            messageFête = "Objectif atteint ! 🎉"
+            fêteEstPalier = false
+            AccessibilityNotification.Announcement("Objectif d'hydratation atteint").post()
+        }
         let apparition: Animation = reduceMotion ? .easeInOut(duration: 0.25) : .spring(response: 0.4, dampingFraction: 0.7)
         withAnimation(apparition) { fête = true }
         Task { @MainActor in
-            try? await Task.sleep(for: .seconds(2.5))
+            try? await Task.sleep(for: .seconds(fêteEstPalier ? 3.2 : 2.5))
             withAnimation(.easeOut(duration: 0.5)) { fête = false }
         }
+    }
+}
+
+/// Pastille « série en cours » affichée sous les boutons d'ajout (gratuit, moteur de rétention).
+private struct StreakChip: View {
+    let jours: Int
+    var body: some View {
+        Label("\(jours) jours d'affilée", systemImage: "flame.fill")
+            .font(.system(.subheadline, design: .rounded).weight(.semibold))
+            .foregroundStyle(.orange)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 7)
+            .background(.orange.opacity(0.12), in: Capsule())
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Série en cours : \(jours) jours d'affilée")
     }
 }
 
