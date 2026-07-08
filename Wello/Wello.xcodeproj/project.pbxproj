@@ -1114,6 +1114,7 @@
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Wello lit tes séances et ton poids pour personnaliser ton objectif d'hydratation.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Wello enregistre tes prises d'eau dans l'app Santé.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Wello utilise ta position pour estimer la météo locale et ajuster l'objectif. ";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -1150,6 +1151,7 @@
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Wello lit tes séances et ton poids pour personnaliser ton objectif d'hydratation.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Wello enregistre tes prises d'eau dans l'app Santé.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Wello utilise ta position pour estimer la météo locale et ajuster l'objectif. ";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

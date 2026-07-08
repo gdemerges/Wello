@@ -11,17 +11,22 @@ public struct CalculatorInputs: Sendable, Equatable {
     public let physiologicalState: PhysiologicalState
     /// Besoin rénal additif (lithiase). 0 si le suivi rénal est désactivé dans le profil.
     public let renalBonusML: Int
+    /// Poids corporel (kg) pour l'ajustement de corpulence (Wello+). `nil` = non personnalisé
+    /// → aucun ajustement (base EFSA seule). Voir `HydrationCalculator` pour la justification.
+    public let bodyWeightKg: Double?
     /// Réglage avancé (Wello+). `.neutre` par défaut → objectif standard.
     public let tuning: CalculatorTuning
 
     public init(sex: BiologicalSex, activeEnergyKcal: Double, weather: WeatherSnapshot?,
                 physiologicalState: PhysiologicalState = .aucun, renalBonusML: Int = 0,
+                bodyWeightKg: Double? = nil,
                 tuning: CalculatorTuning = .neutre) {
         self.sex = sex
         self.activeEnergyKcal = activeEnergyKcal
         self.weather = weather
         self.physiologicalState = physiologicalState
         self.renalBonusML = renalBonusML
+        self.bodyWeightKg = bodyWeightKg
         self.tuning = tuning
     }
 }

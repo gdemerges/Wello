@@ -149,4 +149,73 @@ struct HydrationCalculatorTests {
         #expect(r.renalBonusML == 0)
         #expect(r.totalML == 2000)
     }
+
+    // MARK: Altitude
+
+    @Test("Altitude absente ou en plaine → bonus 0")
+    func altitudePlaine() {
+        // altitude nil
+        let sansAlt = calc.calculate(CalculatorInputs(sex: .homme, activeEnergyKcal: 0, weather: nil))
+        #expect(sansAlt.altitudeBonusML == 0)
+        // altitude sous le seuil
+        let bas = WeatherSnapshot(apparentTemperatureC: 20, altitudeM: 1500)
+        #expect(calc.calculate(CalculatorInputs(sex: .homme, activeEnergyKcal: 0, weather: bas)).altitudeBonusML == 0)
+    }
+
+    @Test("Altitude : +150 ml par 1000 m au-dessus de 2000 m")
+    func altitudeLinéaire() {
+        // 3000 m = 1000 m au-dessus du seuil → +150 ml
+        let w = WeatherSnapshot(apparentTemperatureC: 20, altitudeM: 3000)
+        let r = calc.calculate(CalculatorInputs(sex: .homme, activeEnergyKcal: 0, weather: w))
+        #expect(r.altitudeBonusML == 150)
+        #expect(r.totalML == 2150)
+    }
+
+    @Test("Bonus altitude plafonné à 500 ml")
+    func altitudePlafonnée() {
+        let w = WeatherSnapshot(apparentTemperatureC: 20, altitudeM: 8000)   // Everest-ish
+        #expect(calc.calculate(CalculatorInputs(sex: .homme, activeEnergyKcal: 0, weather: w)).altitudeBonusML == 500)
+    }
+
+    // MARK: Corpulence
+
+    @Test("Poids non fourni → ajustement corpulence 0")
+    func corpulenceAbsente() {
+        let r = calc.calculate(CalculatorInputs(sex: .homme, activeEnergyKcal: 0, weather: nil))
+        #expect(r.bodyBonusML == 0)
+        #expect(r.totalML == 2000)
+    }
+
+    @Test("Poids = référence (70 kg homme) → ajustement 0")
+    func corpulenceRéférence() {
+        let r = calc.calculate(CalculatorInputs(sex: .homme, activeEnergyKcal: 0, weather: nil,
+                                                bodyWeightKg: 70))
+        #expect(r.bodyBonusML == 0)
+    }
+
+    @Test("Poids > référence → ajustement positif borné")
+    func corpulencePositive() {
+        // 84 kg = +20 % vs 70 → 2000 × 0,5 × 0,20 = +200 ml
+        let r = calc.calculate(CalculatorInputs(sex: .homme, activeEnergyKcal: 0, weather: nil,
+                                                bodyWeightKg: 84))
+        #expect(r.bodyBonusML == 200)
+        #expect(r.totalML == 2200)
+    }
+
+    @Test("Poids < référence → ajustement négatif")
+    func corpulenceNégative() {
+        // 56 kg = −20 % vs 70 → −200 ml
+        let r = calc.calculate(CalculatorInputs(sex: .homme, activeEnergyKcal: 0, weather: nil,
+                                                bodyWeightKg: 56))
+        #expect(r.bodyBonusML == -200)
+        #expect(r.totalML == 1800)
+    }
+
+    @Test("Ajustement corpulence borné à ±400 ml")
+    func corpulencePlafonnée() {
+        // 140 kg = +100 % → brut +1000, borné à +400
+        let lourd = calc.calculate(CalculatorInputs(sex: .homme, activeEnergyKcal: 0, weather: nil,
+                                                    bodyWeightKg: 140))
+        #expect(lourd.bodyBonusML == 400)
+    }
 }

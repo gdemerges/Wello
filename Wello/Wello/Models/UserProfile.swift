@@ -24,6 +24,11 @@ final class UserProfile {
     var activitySensitivity: Double = 1.0
     var weatherSensitivity: Double = 1.0
     var manualAdjustmentML: Int = 0
+    /// Personnalisation corpulence (Wello+) : quand active, ajuste la base selon le poids.
+    /// Défauts inline (migration légère). Off par défaut → objectif standard.
+    var usesBodyWeight: Bool = false
+    /// Poids corporel (kg) pour l'ajustement de corpulence. Réglable 40–150.
+    var bodyWeightKg: Double = 70
     var updatedAt: Date
 
     /// Les 3 montants rapides dans l'ordre, pour itération en UI.
@@ -53,6 +58,10 @@ final class UserProfile {
 
     /// Apport rénal effectif appliqué au calcul (0 si le suivi est désactivé).
     var renalBonusEffectifML: Int { renalLithiase ? renalBonusML : 0 }
+
+    /// Poids transmis au calcul : le poids saisi si la personnalisation corpulence est active,
+    /// sinon `nil` (base EFSA seule, aucun ajustement).
+    var poidsPourCalcul: Double? { usesBodyWeight ? bodyWeightKg : nil }
 
     init(remindersEnabled: Bool = true,
          quickAdd1: Int = 150, quickAdd2: Int = 250, quickAdd3: Int = 500,

@@ -2,12 +2,18 @@ import SwiftUI
 import WelloKit
 
 /// Carte détaillant la composition de l'objectif du jour (100 % additif).
+/// Chaque ligne est tappable : elle ouvre l'explication sourcée de la composante (« Méthode »).
 struct BreakdownCard: View {
     let breakdown: GoalBreakdown
     /// Vrai si la météo n'a pas pu être récupérée (le bonus à 0 n'est alors pas significatif).
     var météoIndisponible: Bool = false
     /// Libellé de la ligne état physiologique (selon l'état actif). nil si aucun.
     var libelléÉtatPhysio: String? = nil
+
+    /// Composante dont l'explication est affichée en feuille (nil = aucune).
+    @State private var détail: Composante?
+    /// Présente l'écran « Méthode » complet.
+    @State private var méthode = false
 
     var body: some View {
         CardContainer {
@@ -17,21 +23,25 @@ struct BreakdownCard: View {
                     .foregroundStyle(WelloTheme.ink)
 
                 // Termes additifs : base + bonus, dans l'ordre. Optionnels masqués si nuls.
-                ligne("Base (EFSA)", breakdown.baseML, icon: "person.fill", teinte: WelloTheme.accent)
-                ligne("Activité", breakdown.activityBonusML, icon: "figure.run", teinte: .orange, signe: "+")
-                ligne("Météo", breakdown.weatherBonusML, icon: "cloud.sun.fill", teinte: .yellow, signe: "+")
+                ligne(.base, "Base (EFSA)", breakdown.baseML)
+                ligne(.activité, "Activité", breakdown.activityBonusML, signe: "+")
+                ligne(.météo, "Météo", breakdown.weatherBonusML, signe: "+")
+                if breakdown.altitudeBonusML > 0 {
+                    ligne(.altitude, "Altitude", breakdown.altitudeBonusML, signe: "+")
+                }
                 if breakdown.lifeStageBonusML > 0 {
-                    ligne(libelléÉtatPhysio ?? "État physiologique", breakdown.lifeStageBonusML,
-                          icon: "figure.stand", teinte: .pink, signe: "+")
+                    ligne(.physiologie, libelléÉtatPhysioKey, breakdown.lifeStageBonusML, signe: "+")
                 }
                 if breakdown.renalBonusML > 0 {
-                    ligne("Besoin rénal", breakdown.renalBonusML,
-                          icon: "cross.case.fill", teinte: .purple, signe: "+")
+                    ligne(.rénal, "Besoin rénal", breakdown.renalBonusML, signe: "+")
+                }
+                if breakdown.bodyBonusML != 0 {
+                    // Valeur négative : le "-" est déjà porté par l'entier.
+                    ligne(.corpulence, "Corpulence", breakdown.bodyBonusML,
+                          signe: breakdown.bodyBonusML > 0 ? "+" : "")
                 }
                 if breakdown.manualAdjustmentML != 0 {
-                    // Valeur négative : le "-" est déjà porté par l'entier.
-                    ligne("Réglage avancé", breakdown.manualAdjustmentML,
-                          icon: "slider.horizontal.3", teinte: WelloTheme.accentDeep,
+                    ligne(.réglage, "Réglage avancé", breakdown.manualAdjustmentML,
                           signe: breakdown.manualAdjustmentML > 0 ? "+" : "")
                 }
 
@@ -54,31 +64,64 @@ struct BreakdownCard: View {
                 if breakdown.plafondAppliqué {
                     badge("Bridé au plafond de sécurité (4000 ml)", "exclamationmark.shield.fill", .orange)
                 }
+
+                Button {
+                    méthode = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "info.circle")
+                        Text("Comment mon objectif est-il calculé ?")
+                    }
+                    .font(.system(.subheadline, design: .rounded).weight(.medium))
+                    .foregroundStyle(WelloTheme.accentDeep)
+                    .frame(minHeight: 44)
+                }
+                .accessibilityHint("Ouvre l'explication détaillée du calcul")
             }
         }
+        .sheet(item: $détail) { ComposanteDetailView(composante: $0) }
+        .sheet(isPresented: $méthode) { MéthodeView() }
     }
 
-    private func ligne(_ libellé: String, _ valeur: Int, icon: String, teinte: Color,
+    /// Libellé de la ligne physio en `LocalizedStringKey` (l'état actif, ou un défaut générique).
+    private var libelléÉtatPhysioKey: LocalizedStringKey {
+        libelléÉtatPhysio.map { LocalizedStringKey($0) } ?? "État physiologique"
+    }
+
+    /// Une ligne du breakdown, tappable → ouvre l'explication sourcée de la composante.
+    /// Icône et teinte proviennent de la composante (cohérence avec la feuille de détail).
+    private func ligne(_ composante: Composante, _ libellé: LocalizedStringKey, _ valeur: Int,
                        signe: String = "") -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(teinte)
-                .frame(width: 30, height: 30)
-                .background(teinte.opacity(0.15), in: Circle())
-            Text(libellé)
-                .font(.system(.subheadline, design: .rounded))
-                .foregroundStyle(WelloTheme.inkSoft)
-            Spacer()
-            Text("\(signe)\(valeur) ml")
-                .font(.system(.body, design: .rounded).weight(.medium))
-                .foregroundStyle(WelloTheme.ink)
+        Button {
+            détail = composante
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: composante.icon)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(composante.teinte)
+                    .frame(width: 30, height: 30)
+                    .background(composante.teinte.opacity(0.15), in: Circle())
+                Text(libellé)
+                    .font(.system(.subheadline, design: .rounded))
+                    .foregroundStyle(WelloTheme.inkSoft)
+                Spacer()
+                Text("\(signe)\(valeur) ml")
+                    .font(.system(.body, design: .rounded).weight(.medium))
+                    .foregroundStyle(WelloTheme.ink)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(WelloTheme.inkSoft.opacity(0.4))
+                    .accessibilityHidden(true)
+            }
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
         // Un seul élément VoiceOver par ligne : « Base (EFSA), +200 ml » plutôt que deux swipes.
         .accessibilityElement(children: .combine)
+        .accessibilityHint("Voir l'explication")
     }
 
-    private func badge(_ texte: String, _ icon: String, _ teinte: Color) -> some View {
+    private func badge(_ texte: LocalizedStringKey, _ icon: String, _ teinte: Color) -> some View {
         Label(texte, systemImage: icon)
             .font(.system(.caption, design: .rounded))
             .foregroundStyle(teinte)
@@ -91,7 +134,8 @@ struct BreakdownCard: View {
 #if DEBUG
 #Preview {
     BreakdownCard(breakdown: GoalBreakdown(baseML: 1600, activityBonusML: 200, weatherBonusML: 300,
-                                           lifeStageBonusML: 700, renalBonusML: 0, totalML: 2800,
+                                           altitudeBonusML: 150, lifeStageBonusML: 700, renalBonusML: 0,
+                                           bodyBonusML: 200, totalML: 3150,
                                            plafondAppliqué: false),
                   libelléÉtatPhysio: "Allaitement")
     .padding()

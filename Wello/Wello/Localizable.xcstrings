@@ -139,6 +139,9 @@
         }
       }
     },
+    "À personnaliser selon avis médical." : {
+
+    },
     "Actif" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -149,6 +152,9 @@
           }
         }
       }
+    },
+    "Activité" : {
+
     },
     "Ajoute l'apport recommandé (EFSA) : +300 ml enceinte, +700 ml allaitante." : {
       "extractionState" : "manual",
@@ -211,6 +217,9 @@
         }
       }
     },
+    "Ajustement borné à ±400 ml. Inclus dans Wello+." : {
+
+    },
     "Allaitante" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -221,6 +230,12 @@
           }
         }
       }
+    },
+    "Altitude" : {
+
+    },
+    "Altitude fournie par Open-Meteo. Plafonné à 500 ml." : {
+
     },
     "Analyses" : {
       "extractionState" : "manual",
@@ -349,6 +364,12 @@
         }
       }
     },
+    "Base (EFSA)" : {
+
+    },
+    "Besoin rénal" : {
+
+    },
     "Boisson" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -382,6 +403,9 @@
         }
       }
     },
+    "Bridé au plafond de sécurité (4000 ml)" : {
+
+    },
     "Bu : %lld ml" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -407,6 +431,9 @@
         }
       }
     },
+    "Chaque kilocalorie dépensée à l'effort ajoute environ 1 ml. Évaporer 1 ml de sueur dissipe ~0,58 kcal, et l'essentiel de l'énergie d'un exercice se transforme en chaleur évacuée par la sueur. On part de l'énergie active (intensité réelle), pas de la seule durée." : {
+
+    },
     "Coefficient d'hydratation par boisson (eau = 1,0). Ajuste selon ton ressenti ; valeurs indicatives, non médicales." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -419,6 +446,9 @@
       }
     },
     "Commencer" : {
+
+    },
+    "Comment mon objectif est-il calculé ?" : {
 
     },
     "Conditions d'utilisation" : {
@@ -442,6 +472,9 @@
           }
         }
       }
+    },
+    "Corpulence" : {
+
     },
     "Couper les rappels aujourd'hui" : {
 
@@ -490,6 +523,9 @@
         }
       }
     },
+    "Détail du calcul" : {
+
+    },
     "Diagnostic" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -501,6 +537,12 @@
         }
       }
     },
+    "En altitude, l'air plus sec et une respiration accrue augmentent les pertes en eau, et la diurèse d'adaptation s'élève. On ajoute +150 ml par tranche de 1000 m au-dessus de 2000 m." : {
+
+    },
+    "En prévention des calculs rénaux (lithiase), maintenir une diurèse abondante est recommandé. Le supplément est réglable et doit être ajusté avec ton médecin." : {
+
+    },
     "Enceinte" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -511,6 +553,9 @@
           }
         }
       }
+    },
+    "État physiologique" : {
+
     },
     "Export impossible" : {
       "extractionState" : "manual",
@@ -567,6 +612,12 @@
         }
       }
     },
+    "Fondé sur la thermodynamique de la sudation. Plafonné à 1000 ml." : {
+
+    },
+    "Garde-fou anti-hyperhydratation." : {
+
+    },
     "Historique" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -617,6 +668,15 @@
     "L'abonnement annuel se renouvelle automatiquement sauf annulation au moins 24 h avant la fin de la période en cours ; gère-le ou résilie-le dans les réglages de l'App Store. L'option à vie est un paiement unique, sans renouvellement." : {
 
     },
+    "L'hydratation est une plage, pas une cible au millilitre : ces valeurs sont indicatives, non médicales. En cas de doute, demande conseil à un professionnel de santé." : {
+
+    },
+    "L'objectif est plafonné à 4000 ml par jour. Au-delà, boire plus n'apporte rien et peut devenir risqué (hyponatrémie). Ce plafond n'est jamais dépassé, quels que soient les réglages." : {
+
+    },
+    "La base part des apports de référence européens : environ 2 L de boisson par jour pour un homme, 1,6 L pour une femme. Ils couvrent ~80 % de l'eau totale — le reste vient des aliments. On ne part pas du poids (× 35 ml/kg), qui estime l'eau totale et surévalue la cible de boisson." : {
+
+    },
     "La création des fichiers a échoué. Réessaie." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -627,6 +687,12 @@
           }
         }
       }
+    },
+    "La grossesse (+300 ml) et l'allaitement (+700 ml) élèvent les besoins hydriques, conformément aux apports de référence EFSA." : {
+
+    },
+    "Le bonus suit la température *ressentie*, pas la seule température affichée : elle intègre humidité, vent et rayonnement. Un 30 °C sec (la sueur s'évapore) et un 30 °C humide (elle ne s'évapore plus) n'imposent pas le même effort. +50 ml par °C au-dessus de 27 °C." : {
+
     },
     "Meilleure série : record de %lld jours" : {
       "extractionState" : "manual",
@@ -649,6 +715,15 @@
           }
         }
       }
+    },
+    "Météo" : {
+
+    },
+    "Météo indisponible — bonus non appliqué" : {
+
+    },
+    "Méthode" : {
+
     },
     "ml" : {
 
@@ -703,6 +778,9 @@
     "OK" : {
 
     },
+    "Ouvre l'explication détaillée du calcul" : {
+
+    },
     "Ouvre l'offre Wello+" : {
 
     },
@@ -741,6 +819,9 @@
           }
         }
       }
+    },
+    "Plafond de sécurité" : {
+
     },
     "Plage" : {
 
@@ -820,6 +901,9 @@
         }
       }
     },
+    "Réglage avancé, inclus dans Wello+." : {
+
+    },
     "Réinitialiser" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -881,6 +965,12 @@
     "Série en cours : %lld jours d'affilée" : {
 
     },
+    "Source : EFSA 2010 — apports de référence en eau." : {
+
+    },
+    "Source : EFSA 2010." : {
+
+    },
     "Suivant" : {
 
     },
@@ -894,6 +984,9 @@
           }
         }
       }
+    },
+    "Température apparente (Open-Meteo). Plafonné à 600 ml." : {
+
     },
     "Tendance : moyenne 7 jours %@, %@" : {
       "extractionState" : "manual",
@@ -949,6 +1042,9 @@
         }
       }
     },
+    "Ton objectif n'est pas un chiffre magique : c'est une somme de termes, chacun fondé sur des données publiées. Voici lesquels, et pourquoi." : {
+
+    },
     "Ton sexe" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -977,6 +1073,9 @@
     "Tranche" : {
 
     },
+    "Tu peux affiner manuellement ta sensibilité à l'effort et à la chaleur, ou appliquer un décalage fixe. Les plafonds de sécurité restent toujours appliqués." : {
+
+    },
     "Un seul paiement, à vie." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -988,6 +1087,9 @@
         }
       }
     },
+    "Une corpulence plus élevée s'accompagne d'un volume hydrique corporel plus grand. On ajuste modérément la base selon ton poids (au maximum ±400 ml), sans basculer vers un calcul au kilo qui surestimerait la cible." : {
+
+    },
     "Vise un apport plus élevé pour la prévention des calculs. À régler selon avis médical." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -998,6 +1100,9 @@
           }
         }
       }
+    },
+    "Voir l'explication" : {
+
     },
     "Wello" : {
 

@@ -54,7 +54,9 @@ pleinement utilisable en saisie manuelle (activité = 0, météo = bonus 0, pas 
 base          = 2000 ml (homme) | 1600 ml (femme)        // apport de boisson EFSA
 activité      = min(énergie active kcal × 1, 1000)       // 1 ml/kcal (HealthKit), plafonné
 météo         = min(max(0, ressentie°C − 27) × 50, 600)  // ressentie = apparent temp, 0 si indispo
-physiologique = base + activité + météo
+altitude      = min(max(0, alt − 2000)/1000 × 150, 500)  // Open-Meteo, 0 en plaine/indispo
+corpulence    = clamp(base × 0,5 × (poids−réf)/réf, ±400) // Wello+, réf 70/60 kg ; 0 si non activé
+physiologique = base + activité + météo + altitude + physioÉtat + rénal + corpulence + ajust. manuel
 total         = min(4000, max(plancher médical, physiologique))
 ```
 
@@ -74,6 +76,15 @@ qui combine déjà chaleur, humidité, vent et rayonnement — un seul indicateu
 thermique. Montée linéaire de **50 mL par °C ressenti au-dessus de 27 °C** (zone de confort),
 plafonnée à 600 mL. Un 30 °C sec (sueur qui s'évapore) et un 30 °C humide (qui ne s'évapore plus)
 donnent ainsi des ressentis — et des besoins — très différents.
+
+Le bonus **altitude** (élévation Open-Meteo) ajoute **+150 mL par 1000 m au-dessus de 2000 m**
+(plafond 500 mL) : en altitude, l'air sec et l'hyperventilation majorent les pertes hydriques.
+
+L'ajustement de **corpulence** (Wello+, opt-in) module la base EFSA selon le poids : une fraction
+**bornée à ±400 mL** de l'écart relatif à un poids de référence (70 kg homme / 60 kg femme). On
+n'adopte **pas** le « 35 mL/kg » (qui estime l'eau *totale* et surestime la cible de boisson) — la
+corpulence ne fait qu'*affiner* le socle EFSA. Le calcul complet et ses sources sont exposés dans
+l'app via l'écran **« Méthode »** (chaque ligne du détail de l'objectif est tappable).
 
 ## Où ajuster le plancher médical
 

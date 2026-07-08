@@ -21,7 +21,8 @@ struct WeatherService: WeatherServicing {
             guard (réponse as? HTTPURLResponse)?.statusCode == 200 else { return nil }
             let dto = try JSONDecoder().decode(OpenMeteoDTO.self, from: data)
             guard let ressentieMax = dto.daily.apparent_temperature_max.first else { return nil }
-            return WeatherSnapshot(apparentTemperatureC: ressentieMax)
+            // `elevation` (m) est renvoyé par défaut par Open-Meteo : alimente le bonus altitude.
+            return WeatherSnapshot(apparentTemperatureC: ressentieMax, altitudeM: dto.elevation)
         } catch {
             return nil   // réseau/API down → météo absente, le calcul tourne quand même
         }
@@ -32,4 +33,6 @@ struct WeatherService: WeatherServicing {
 private struct OpenMeteoDTO: Decodable {
     struct Daily: Decodable { let apparent_temperature_max: [Double] }
     let daily: Daily
+    /// Altitude du point (m). Renvoyée par défaut par Open-Meteo ; optionnelle par prudence.
+    let elevation: Double?
 }

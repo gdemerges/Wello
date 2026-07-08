@@ -287,6 +287,21 @@ struct ProfileView: View {
                     label("Ajustement manuel", ajustementLabel(profil.manualAdjustmentML),
                           icon: "slider.horizontal.3", teinte: WelloTheme.accentDeep)
                 }
+                Toggle(isOn: Binding(get: { profil.usesBodyWeight },
+                                     set: { profil.usesBodyWeight = $0; profil.updatedAt = .now
+                                            Task { await store.refreshToday(force: true) } })) {
+                    label("Personnaliser selon ma corpulence", nil,
+                          icon: "scalemass.fill", teinte: .indigo)
+                }
+                if profil.usesBodyWeight {
+                    Stepper(value: Binding(get: { profil.bodyWeightKg },
+                                           set: { profil.bodyWeightKg = $0; profil.updatedAt = .now
+                                                  Task { await store.refreshToday(force: true) } }),
+                            in: 40...150, step: 1) {
+                        label("Poids", "\(Int(profil.bodyWeightKg)) kg",
+                              icon: "figure", teinte: .indigo)
+                    }
+                }
                 if profil.réglageAvancéModifié {
                     Button("Réinitialiser le réglage") {
                         profil.activitySensitivity = 1

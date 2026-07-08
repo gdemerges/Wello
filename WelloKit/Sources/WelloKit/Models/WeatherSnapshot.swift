@@ -5,7 +5,12 @@ public struct WeatherSnapshot: Sendable, Equatable {
     /// donc de la perte sudorale.
     public let apparentTemperatureC: Double
 
-    public init(apparentTemperatureC: Double) {
+    /// Altitude du lieu (mètres), issue d'Open-Meteo. `nil` si indisponible → aucun bonus altitude.
+    /// En altitude, les besoins hydriques augmentent (pertes respiratoires accrues + diurèse).
+    public let altitudeM: Double?
+
+    public init(apparentTemperatureC: Double, altitudeM: Double? = nil) {
         self.apparentTemperatureC = apparentTemperatureC
+        self.altitudeM = altitudeM
     }
 }

@@ -59,6 +59,7 @@ final class HydrationStore {
 
     private enum Clés {
         static let météoRessentie = "wello.meteo.ressentieC"
+        static let météoAltitude = "wello.meteo.altitudeM"
         static let météoDate = "wello.meteo.capturéeA"
     }
 
@@ -124,6 +125,7 @@ final class HydrationStore {
         let inputs = CalculatorInputs(sex: sexe, activeEnergyKcal: énergie, weather: snapshot,
                                       physiologicalState: profil.etatPhysio,
                                       renalBonusML: profil.renalBonusEffectifML,
+                                      bodyWeightKg: profil.poidsPourCalcul,
                                       tuning: profil.tuning)
         let resultat = calculator.calculate(inputs)
         breakdown = resultat
@@ -161,7 +163,10 @@ final class HydrationStore {
         if let cache = météoCache, météoFraîche(cache.capturéeÀ) { return cache.snapshot }
         let d = UserDefaults.standard
         if let capturée = d.object(forKey: Clés.météoDate) as? Date, météoFraîche(capturée) {
-            let snap = WeatherSnapshot(apparentTemperatureC: d.double(forKey: Clés.météoRessentie))
+            // `object(as: Double?)` distingue « altitude absente » de « niveau de la mer (0 m) ».
+            let altitude = d.object(forKey: Clés.météoAltitude) as? Double
+            let snap = WeatherSnapshot(apparentTemperatureC: d.double(forKey: Clés.météoRessentie),
+                                       altitudeM: altitude)
             météoCache = (snap, capturée)   // réhydrate le cache mémoire
             return snap
         }
@@ -178,6 +183,11 @@ final class HydrationStore {
         météoCache = (snap, maintenant)
         let d = UserDefaults.standard
         d.set(snap.apparentTemperatureC, forKey: Clés.météoRessentie)
+        if let altitude = snap.altitudeM {
+            d.set(altitude, forKey: Clés.météoAltitude)
+        } else {
+            d.removeObject(forKey: Clés.météoAltitude)
+        }
         d.set(maintenant, forKey: Clés.météoDate)
     }
 
@@ -411,16 +421,18 @@ final class HydrationStore {
             goal.baseML = r.baseML
             goal.activityBonusML = r.activityBonusML
             goal.weatherBonusML = r.weatherBonusML
+            goal.altitudeBonusML = r.altitudeBonusML
             goal.lifeStageBonusML = r.lifeStageBonusML
             goal.renalBonusML = r.renalBonusML
+            goal.bodyBonusML = r.bodyBonusML
             goal.manualAdjustmentML = r.manualAdjustmentML
             goal.totalML = r.totalML
             goal.calculatedAt = .now
         } else {
             let goal = DailyGoal(date: jour, baseML: r.baseML, activityBonusML: r.activityBonusML,
-                                 weatherBonusML: r.weatherBonusML,
+                                 weatherBonusML: r.weatherBonusML, altitudeBonusML: r.altitudeBonusML,
                                  lifeStageBonusML: r.lifeStageBonusML, renalBonusML: r.renalBonusML,
-                                 manualAdjustmentML: r.manualAdjustmentML,
+                                 bodyBonusML: r.bodyBonusML, manualAdjustmentML: r.manualAdjustmentML,
                                  totalML: r.totalML)
             modelContext.insert(goal)
         }
