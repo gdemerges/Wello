@@ -46,6 +46,7 @@ struct BreakdownCard: View {
                         .font(.system(.title3, design: .rounded).weight(.bold))
                         .foregroundStyle(WelloTheme.accentDeep)
                 }
+                .accessibilityElement(children: .combine)
 
                 if météoIndisponible {
                     badge("Météo indisponible — bonus non appliqué", "wifi.slash", .gray)
@@ -73,6 +74,8 @@ struct BreakdownCard: View {
                 .font(.system(.body, design: .rounded).weight(.medium))
                 .foregroundStyle(WelloTheme.ink)
         }
+        // Un seul élément VoiceOver par ligne : « Base (EFSA), +200 ml » plutôt que deux swipes.
+        .accessibilityElement(children: .combine)
     }
 
     private func badge(_ texte: String, _ icon: String, _ teinte: Color) -> some View {
