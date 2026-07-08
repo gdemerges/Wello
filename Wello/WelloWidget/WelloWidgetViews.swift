@@ -18,9 +18,11 @@ struct WelloWidgetView: View {
 
     var body: some View {
         switch family {
-        case .accessoryCircular: AccessoryView(entry: entry)
-        case .systemMedium:      MediumView(entry: entry)
-        default:                 SmallView(entry: entry)
+        case .accessoryCircular:    AccessoryView(entry: entry)
+        case .accessoryRectangular: RectangularView(entry: entry)
+        case .accessoryInline:      InlineView(entry: entry)
+        case .systemMedium:         MediumView(entry: entry)
+        default:                    SmallView(entry: entry)
         }
     }
 }
@@ -113,6 +115,41 @@ private struct AccessoryView: View {
     }
 }
 
+/// Accessoire rectangulaire (écran verrouillé) : titre + valeurs + barre de progression.
+private struct RectangularView: View {
+    let entry: WelloEntry
+    var body: some View {
+        if entry.configuré {
+            VStack(alignment: .leading, spacing: 3) {
+                Label("Hydratation", systemImage: "drop.fill")
+                    .font(.system(.caption, design: .rounded).weight(.semibold))
+                Text("\(entry.progress.libelléValeurs) · \(entry.progress.libelléPourcent)")
+                    .font(.system(.caption2, design: .rounded))
+                    .foregroundStyle(.secondary)
+                Gauge(value: entry.progress.fraction) { EmptyView() }
+                    .gaugeStyle(.accessoryLinearCapacity)
+            }
+            .widgetAccentable()
+        } else {
+            Label("Ouvre Wello", systemImage: "drop")
+                .font(.system(.caption, design: .rounded).weight(.semibold))
+        }
+    }
+}
+
+/// Accessoire en ligne (écran verrouillé / au-dessus de l'heure) : une seule ligne texte + icône.
+private struct InlineView: View {
+    let entry: WelloEntry
+    var body: some View {
+        if entry.configuré {
+            Label("\(entry.progress.libelléValeurs) · \(entry.progress.libelléPourcent)",
+                  systemImage: "drop.fill")
+        } else {
+            Label("Ouvre Wello", systemImage: "drop")
+        }
+    }
+}
+
 /// État « pas encore configuré » (sexe non renseigné / objectif non calculé).
 private struct NonConfiguré: View {
     var body: some View {
@@ -130,5 +167,7 @@ private struct NonConfiguré: View {
 #if DEBUG
 #Preview("Petit", as: .systemSmall) { WelloWidget() } timeline: { WelloEntry.placeholder }
 #Preview("Moyen", as: .systemMedium) { WelloWidget() } timeline: { WelloEntry.placeholder }
-#Preview("Accessoire", as: .accessoryCircular) { WelloWidget() } timeline: { WelloEntry.placeholder }
+#Preview("Accessoire circulaire", as: .accessoryCircular) { WelloWidget() } timeline: { WelloEntry.placeholder }
+#Preview("Accessoire rectangulaire", as: .accessoryRectangular) { WelloWidget() } timeline: { WelloEntry.placeholder }
+#Preview("Accessoire en ligne", as: .accessoryInline) { WelloWidget() } timeline: { WelloEntry.placeholder }
 #endif

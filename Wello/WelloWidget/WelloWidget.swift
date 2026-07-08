@@ -59,7 +59,8 @@ struct Provider: TimelineProvider {
     }
 }
 
-/// Le widget Wello : petit + moyen (accueil) et accessoire circulaire (écran verrouillé).
+/// Le widget Wello : petit + moyen (accueil) et accessoires écran verrouillé
+/// (circulaire, rectangulaire, en ligne).
 struct WelloWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "WelloWidget", provider: Provider()) { entry in
@@ -68,6 +69,7 @@ struct WelloWidget: Widget {
         }
         .configurationDisplayName("Hydratation")
         .description("Ta progression du jour, avec ajout rapide.")
-        .supportedFamilies([.systemSmall, .systemMedium, .accessoryCircular])
+        .supportedFamilies([.systemSmall, .systemMedium,
+                            .accessoryCircular, .accessoryRectangular, .accessoryInline])
     }
 }
