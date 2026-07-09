@@ -480,6 +480,32 @@ private struct SaisieEauSheet: View {
     private var coefficient: Double { drinks.coefficient(for: drink) }
     private var effectif: Int { effectiveHydrationML(volumeML: ml, coefficient: coefficient) }
 
+    /// Micro-pédagogie sur l'effet réel de la boisson choisie : une boisson n'hydrate pas toujours
+    /// à 100 %, certaines ne comptent pas, d'autres retirent de l'eau (spiritueux). Rendu coloré
+    /// pour que la nuance saute aux yeux au moment de valider la prise.
+    @ViewBuilder private var effetHydratation: some View {
+        let pourcent = Int((coefficient * 100).rounded())
+        if coefficient < 0 {
+            effetLigne("exclamationmark.triangle.fill", .orange,
+                       "Boisson déshydratante — retranche ≈ \(-effectif) ml de ton total.")
+        } else if coefficient == 0 {
+            effetLigne("minus.circle.fill", WelloTheme.inkSoft,
+                       "N'hydrate pas — comptée pour 0 ml.")
+        } else if coefficient < 1 {
+            effetLigne("drop.fill", WelloTheme.inkSoft,
+                       "Hydrate à \(pourcent) % — ≈ \(effectif) ml comptés sur \(ml).")
+        } else {
+            effetLigne("drop.fill", WelloTheme.accentDeep,
+                       "≈ \(effectif) ml comptés.")
+        }
+    }
+
+    private func effetLigne(_ icon: String, _ teinte: Color, _ texte: LocalizedStringKey) -> some View {
+        Label { Text(texte) } icon: { Image(systemName: icon).foregroundStyle(teinte) }
+            .font(.system(.caption, design: .rounded))
+            .foregroundStyle(teinte)
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -506,8 +532,7 @@ private struct SaisieEauSheet: View {
                     }
                 } footer: {
                     if premium && coefficient != 1.0 {
-                        Text("≈ \(effectif) ml hydratants (coefficient \(coefficient, format: .number.precision(.fractionLength(0...2))))")
-                            .font(.system(.caption, design: .rounded))
+                        effetHydratation
                     }
                 }
                 if !premium {

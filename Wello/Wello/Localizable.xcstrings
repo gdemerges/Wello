@@ -537,6 +537,9 @@
         }
       }
     },
+    "%lld millilitres par jour" : {
+
+    },
     "%lld millilitres sur %lld, %lld pour cent" : {
       "localizations" : {
         "de" : {
@@ -1073,7 +1076,11 @@
         }
       }
     },
+    "≈ %lld ml comptés." : {
+
+    },
     "≈ %lld ml hydratants (coefficient %@)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2474,6 +2481,7 @@
       }
     },
     "attendus maintenant" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2847,6 +2855,9 @@
         }
       }
     },
+    "Base scientifique (EFSA)" : {
+
+    },
     "Besoin rénal" : {
       "localizations" : {
         "de" : {
@@ -3077,6 +3088,9 @@
           }
         }
       }
+    },
+    "Boisson déshydratante — retranche ≈ %lld ml de ton total." : {
+
     },
     "Boissons" : {
       "extractionState" : "manual",
@@ -3450,6 +3464,9 @@
         }
       }
     },
+    "Chaque jour, Wello ajuste ce socle automatiquement :" : {
+
+    },
     "Chaque kilocalorie dépensée à l'effort ajoute environ 1 ml. Évaporer 1 ml de sueur dissipe ~0,58 kcal, et l'essentiel de l'énergie d'un exercice se transforme en chaleur évacuée par la sueur. On part de l'énergie active (intensité réelle), pas de la seule durée." : {
       "localizations" : {
         "de" : {
@@ -3588,6 +3605,9 @@
           }
         }
       }
+    },
+    "Comment est-il calculé ?" : {
+
     },
     "Comment mon objectif est-il calculé ?" : {
       "localizations" : {
@@ -5077,6 +5097,16 @@
         }
       }
     },
+    "Hydrate à %lld %% — ≈ %lld ml comptés sur %lld." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hydrate à %1$lld %% — ≈ %2$lld ml comptés sur %3$lld."
+          }
+        }
+      }
+    },
     "Il fixe ta base d'hydratation selon les apports de référence EFSA." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5723,6 +5753,9 @@
         }
       }
     },
+    "maintenant" : {
+
+    },
     "Meilleure série : record de %lld jours" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -6094,6 +6127,9 @@
         }
       }
     },
+    "N'hydrate pas — comptée pour 0 ml." : {
+
+    },
     "non capturée" : {
       "localizations" : {
         "de" : {
@@ -6325,6 +6361,9 @@
           }
         }
       }
+    },
+    "Objectif atteint" : {
+
     },
     "Objectif atteint ! 🎉" : {
       "extractionState" : "manual",
@@ -6740,6 +6779,9 @@
           }
         }
       }
+    },
+    "par jour" : {
+
     },
     "pas encore calculé" : {
       "localizations" : {
@@ -7931,6 +7973,7 @@
       }
     },
     "restants" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -8023,6 +8066,9 @@
         }
       }
     },
+    "reste %lld ml" : {
+
+    },
     "Rythme du jour" : {
       "localizations" : {
         "de" : {
@@ -8068,6 +8114,12 @@
           }
         }
       }
+    },
+    "Rythme du jour : il reste %lld ml à boire." : {
+
+    },
+    "Rythme du jour : objectif atteint." : {
+
     },
     "Sans engagement, ou une fois pour toutes." : {
       "localizations" : {
@@ -9094,6 +9146,9 @@
         }
       }
     },
+    "Ton objectif personnalisé" : {
+
+    },
     "Ton pic d'hydratation est à la mi-journée." : {
       "localizations" : {
         "de" : {
@@ -9972,6 +10027,7 @@
       }
     },
     "verre" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -10018,6 +10074,7 @@
       }
     },
     "verres" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -10201,6 +10258,9 @@
           }
         }
       }
+    },
+    "Voir mon objectif" : {
+
     },
     "Wello" : {
       "localizations" : {

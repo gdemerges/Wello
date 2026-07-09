@@ -36,3 +36,22 @@ jobs:
             -target arm64-apple-ios17.0-simulator -I /tmp/wellomod \
             Wello/Wello/App/*.swift Wello/Wello/Models/*.swift \
             Wello/Wello/Services/*.swift Wello/Wello/Views/*.swift
+
+  integration-tests:
+    name: Tests d'intégration HydrationStore (xcodebuild)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      # Tests d'orchestration de l'app (SwiftData + mocks), cible « WelloTests » du scheme partagé
+      # « Wello ». Contrairement au type-check, ceux-ci exécutent réellement le store sur simulateur.
+      # Simulateur non signé (CODE_SIGNING_ALLOWED=NO) ; `-only-testing` isole la cible app.
+      - name: xcodebuild test (WelloTests)
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project Wello/Wello.xcodeproj \
+            -scheme Wello \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+            -only-testing:WelloTests \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
