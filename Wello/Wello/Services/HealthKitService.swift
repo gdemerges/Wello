@@ -79,16 +79,36 @@ final class HealthKitService: HealthKitServicing, @unchecked Sendable {
             .map { PériodeSommeil(début: $0.startDate, fin: $0.endDate) }
     }
 
-    func écrireEau(ml: Int, date: Date) async {
-        guard HKHealthStore.isHealthDataAvailable() else { return }
+    func écrireEau(ml: Int, date: Date) async -> UUID? {
+        guard HKHealthStore.isHealthDataAvailable() else { return nil }
         let quantité = HKQuantity(unit: .literUnit(with: .milli), doubleValue: Double(ml))
         let sample = HKQuantitySample(type: waterType, quantity: quantité, start: date, end: date)
-        try? await store.save(sample)
+        do {
+            try await store.save(sample)
+            return sample.uuid
+        } catch {
+            return nil
+        }
     }
 
-    func supprimerEau(ml: Int, date: Date) async {
+    func supprimerEau(uuid: UUID?, ml: Int, date: Date) async {
         guard HKHealthStore.isHealthDataAvailable() else { return }
-        // Fenêtre étroite autour de l'instant d'écriture (start == end == date).
+
+        // Chemin précis : suppression par identité de l'échantillon.
+        if let uuid {
+            let prédicat = HKQuery.predicateForObject(with: uuid)
+            let échantillons: [HKQuantitySample] = await withCheckedContinuation { cont in
+                let q = HKSampleQuery(sampleType: waterType, predicate: prédicat,
+                                      limit: 1, sortDescriptors: nil) { _, samples, _ in
+                    cont.resume(returning: (samples as? [HKQuantitySample]) ?? [])
+                }
+                store.execute(q)
+            }
+            if let cible = échantillons.first { try? await store.delete(cible) }
+            return
+        }
+
+        // Repli (prises écrites avant `healthSampleUUID`) : fenêtre étroite + montant exact.
         let prédicat = HKQuery.predicateForSamples(withStart: date.addingTimeInterval(-1),
                                                    end: date.addingTimeInterval(1))
         let échantillons: [HKQuantitySample] = await withCheckedContinuation { cont in
@@ -98,7 +118,6 @@ final class HealthKitService: HealthKitServicing, @unchecked Sendable {
             }
             store.execute(q)
         }
-        // On ne supprime que l'échantillon du bon montant (celui de cette prise).
         let cible = échantillons.first { Int($0.quantity.doubleValue(for: .literUnit(with: .milli)).rounded()) == ml }
         if let cible { try? await store.delete(cible) }
     }

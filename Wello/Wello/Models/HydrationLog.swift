@@ -21,6 +21,10 @@ final class HydrationLog {
     /// UUID de la `PriseWatch` d'origine, pour les prises saisies au poignet (dédup WCSession).
     /// nil pour toute autre source. Défaut inline = migration légère SwiftData.
     var watchUUID: UUID? = nil
+    /// UUID de l'échantillon HealthKit *écrit par Wello* pour cette prise (source app/watch),
+    /// afin de le supprimer précisément (par identité, pas par montant+date). nil sinon.
+    /// Défaut inline = migration légère SwiftData.
+    var healthSampleUUID: UUID? = nil
 
     /// Boisson typée (repli sur l'eau si la valeur stockée est inconnue).
     var drink: DrinkType { DrinkType(rawValue: drinkType) ?? .water }
@@ -31,7 +35,7 @@ final class HydrationLog {
     init(amountML: Int, loggedAt: Date = .now, source: String = "app",
          healthKitUUID: UUID? = nil,
          drinkType: String = "water", coefficient: Double = 1.0,
-         watchUUID: UUID? = nil) {
+         watchUUID: UUID? = nil, healthSampleUUID: UUID? = nil) {
         self.amountML = amountML
         self.loggedAt = loggedAt
         self.source = source
@@ -39,5 +43,6 @@ final class HydrationLog {
         self.drinkType = drinkType
         self.coefficient = coefficient
         self.watchUUID = watchUUID
+        self.healthSampleUUID = healthSampleUUID
     }
 }

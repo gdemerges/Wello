@@ -61,6 +61,28 @@ final class HydrationStore {
         static let météoRessentie = "wello.meteo.ressentieC"
         static let météoAltitude = "wello.meteo.altitudeM"
         static let météoDate = "wello.meteo.capturéeA"
+        /// UUIDs d'imports externes supprimés (→ epoch), pour ne pas les réimporter le jour même.
+        static let pierresTombales = "wello.import.pierresTombales"
+    }
+
+    /// Durée de vie d'une pierre tombale : au-delà, l'échantillon est hors de la fenêtre d'import
+    /// journalière (`depuis: début`), donc plus aucun risque de réimport.
+    private static let ttlPierreTombale: TimeInterval = 2 * 86400
+
+    /// UUIDs d'imports externes récemment supprimés (purgés des entrées expirées).
+    private var pierresTombales: Set<UUID> {
+        let raw = (UserDefaults.standard.dictionary(forKey: Clés.pierresTombales) as? [String: Double]) ?? [:]
+        let limite = Date.now.addingTimeInterval(-Self.ttlPierreTombale).timeIntervalSince1970
+        return Set(raw.compactMap { $0.value >= limite ? UUID(uuidString: $0.key) : nil })
+    }
+
+    /// Marque un UUID d'import externe comme supprimé (avec purge des entrées expirées).
+    private func ajouterPierreTombale(_ uuid: UUID) {
+        var raw = (UserDefaults.standard.dictionary(forKey: Clés.pierresTombales) as? [String: Double]) ?? [:]
+        let limite = Date.now.addingTimeInterval(-Self.ttlPierreTombale).timeIntervalSince1970
+        raw = raw.filter { $0.value >= limite }
+        raw[uuid.uuidString] = Date.now.timeIntervalSince1970
+        UserDefaults.standard.set(raw, forKey: Clés.pierresTombales)
     }
 
     /// Fenêtre de throttle du recalcul et de validité du cache météo.
@@ -204,8 +226,9 @@ final class HydrationStore {
             predicate: #Predicate { $0.healthKitUUID != nil && $0.loggedAt >= début }
         )
         let déjàImportés = Set((try? modelContext.fetch(descripteur))?.compactMap(\.healthKitUUID) ?? [])
+        let pierres = pierresTombales   // imports supprimés à ne pas ressusciter
 
-        for prise in externes where !déjàImportés.contains(prise.id) {
+        for prise in externes where !déjàImportés.contains(prise.id) && !pierres.contains(prise.id) {
             modelContext.insert(HydrationLog(amountML: prise.ml, loggedAt: prise.date,
                                              source: "healthkit", healthKitUUID: prise.id))
         }
@@ -242,7 +265,7 @@ final class HydrationStore {
                                   drinkType: drink.rawValue, coefficient: coefficient)
         modelContext.insert(entrée)
         let effectif = max(0, entrée.effectiveML)
-        if effectif > 0 { await healthKit.écrireEau(ml: effectif, date: entrée.loggedAt) }
+        if effectif > 0 { entrée.healthSampleUUID = await healthKit.écrireEau(ml: effectif, date: entrée.loggedAt) }
 
         if let objectif = breakdown?.totalML {
             await planifierSelonPalier(objectifML: objectif)
@@ -263,14 +286,15 @@ final class HydrationStore {
         descripteur.fetchLimit = 1
         guard let dernière = try? modelContext.fetch(descripteur).first else { return }
 
+        // Capture avant delete (l'objet ne doit plus être lu après `modelContext.delete`).
         let effectif = max(0, dernière.effectiveML)
         let date = dernière.loggedAt
-        // Ne supprimer dans Santé que les échantillons *écrits par Wello* (comme `supprimer`) :
-        // un import externe ne nous appartient pas (suppression vouée à l'échec) et serait
-        // réimporté au prochain refresh.
-        let estApp = dernière.source == "app"
+        let source = dernière.source
+        let sampleUUID = dernière.healthSampleUUID
+        let importUUID = dernière.healthKitUUID
         modelContext.delete(dernière)
-        if estApp && effectif > 0 { await healthKit.supprimerEau(ml: effectif, date: date) }
+        await nettoyerSantéAprèsSuppression(source: source, healthSampleUUID: sampleUUID,
+                                            healthKitUUID: importUUID, effectif: effectif, date: date)
 
         if let objectif = breakdown?.totalML {
             await planifierSelonPalier(objectifML: objectif)
@@ -285,15 +309,33 @@ final class HydrationStore {
     func supprimer(_ log: HydrationLog) async {
         let effectif = max(0, log.effectiveML)
         let date = log.loggedAt
-        let estApp = log.source == "app"
+        let source = log.source
+        let sampleUUID = log.healthSampleUUID
+        let importUUID = log.healthKitUUID
         modelContext.delete(log)
-        if estApp && effectif > 0 { await healthKit.supprimerEau(ml: effectif, date: date) }
+        await nettoyerSantéAprèsSuppression(source: source, healthSampleUUID: sampleUUID,
+                                            healthKitUUID: importUUID, effectif: effectif, date: date)
         if let objectif = breakdown?.totalML {
             await planifierSelonPalier(objectifML: objectif)
         }
         rechargerWidgets()
         pousserSnapshotWatch()
         rafraîchirLiveActivité()
+    }
+
+    /// Après suppression d'une prise : retire l'échantillon Santé si Wello l'a écrit (par UUID,
+    /// sinon repli montant+date), et pose une **pierre tombale** si c'était un import externe —
+    /// sinon il serait réimporté le jour même par `importerEauHealthKit`.
+    private func nettoyerSantéAprèsSuppression(source: String, healthSampleUUID: UUID?,
+                                               healthKitUUID: UUID?, effectif: Int, date: Date) async {
+        if source == "healthkit" {
+            if let ext = healthKitUUID { ajouterPierreTombale(ext) }
+            return   // échantillon d'une autre source : pas à nous de le supprimer
+        }
+        // Prise écrite par Wello (app ou watch) : suppression précise si l'UUID est connu.
+        if healthSampleUUID != nil || effectif > 0 {
+            await healthKit.supprimerEau(uuid: healthSampleUUID, ml: effectif, date: date)
+        }
     }
 
     /// Replanifie les rappels selon le palier : `plus` (avec assez de données) → adaptatif ;
@@ -417,7 +459,7 @@ final class HydrationStore {
         let entrée = HydrationLog(amountML: prise.amountML, loggedAt: prise.loggedAt, source: "watch",
                                   drinkType: "water", coefficient: 1.0, watchUUID: id)
         modelContext.insert(entrée)
-        if entrée.effectiveML > 0 { await healthKit.écrireEau(ml: entrée.effectiveML, date: entrée.loggedAt) }
+        if entrée.effectiveML > 0 { entrée.healthSampleUUID = await healthKit.écrireEau(ml: entrée.effectiveML, date: entrée.loggedAt) }
         if let objectif = breakdown?.totalML {
             await planifierSelonPalier(objectifML: objectif)
         }

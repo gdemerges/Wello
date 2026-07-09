@@ -14,11 +14,13 @@ protocol HealthKitServicing: Sendable {
     func requestAuthorization() async
     /// Énergie active (kcal) brûlée en séances aujourd'hui. 0 si indisponible/refusé.
     func énergieActiveDuJour() async -> Double
-    /// Écrit une prise d'eau dans Santé.app. No-op si refusé.
-    func écrireEau(ml: Int, date: Date) async
-    /// Supprime de Santé.app l'échantillon d'eau du montant et de la date donnés (celui
-    /// écrit par Wello). Best-effort : no-op si introuvable, refusé ou indisponible.
-    func supprimerEau(ml: Int, date: Date) async
+    /// Écrit une prise d'eau dans Santé.app et renvoie l'UUID de l'échantillon créé (pour
+    /// pouvoir le supprimer précisément ensuite). nil si refusé/indisponible.
+    func écrireEau(ml: Int, date: Date) async -> UUID?
+    /// Supprime de Santé.app l'échantillon d'eau écrit par Wello. Par `uuid` si connu (identité
+    /// exacte) ; sinon repli sur la correspondance montant+date (prises anté-`healthSampleUUID`).
+    /// Best-effort : no-op si introuvable, refusé ou indisponible.
+    func supprimerEau(uuid: UUID?, ml: Int, date: Date) async
     /// Prises d'eau (dietaryWater) enregistrées depuis `date` par d'AUTRES sources que Wello
     /// (Apple Watch, autres apps). Sert à importer l'eau saisie ailleurs. Vide si refusé.
     func prisesEauExternes(depuis date: Date) async -> [PriseEauExterne]

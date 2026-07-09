@@ -6,8 +6,8 @@ struct MockHealthKitService: HealthKitServicing {
     var énergieKcal: Double = 320
     func requestAuthorization() async {}
     func énergieActiveDuJour() async -> Double { énergieKcal }
-    func écrireEau(ml: Int, date: Date) async {}
-    func supprimerEau(ml: Int, date: Date) async {}
+    func écrireEau(ml: Int, date: Date) async -> UUID? { nil }
+    func supprimerEau(uuid: UUID?, ml: Int, date: Date) async {}
     func prisesEauExternes(depuis date: Date) async -> [PriseEauExterne] { [] }
     func dernierWorkoutTerminé() async -> Date? { nil }
     var périodesSommeilMock: [PériodeSommeil] = []
