@@ -103,7 +103,7 @@ struct AnalyticsView: View {
         // Trois états : hausse / baisse / stable (delta nul). Stable évite une flèche verte
         // « +0,0 L » trompeuse en début d'usage, quand les deux moyennes coïncident.
         let icon = delta > 0 ? "arrow.up.right" : (delta < 0 ? "arrow.down.right" : "arrow.right")
-        let teinte: Color = delta > 0 ? .green : (delta < 0 ? .orange : WelloTheme.inkSoft)
+        let teinte: Color = delta > 0 ? WelloTheme.success : (delta < 0 ? .orange : WelloTheme.inkSoft)
         let résumé = delta == 0 ? "stable vs 30 j" : "\(delta > 0 ? "+" : "−")\(litres(abs(delta))) vs 30 j"
         let étatA11y = delta == 0
             ? "stable par rapport à la moyenne 30 jours"

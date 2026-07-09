@@ -45,6 +45,20 @@ enum WelloTheme {
     static var waterTop: Color { Color(hex: current.palette.waterTop) }
     static var waterBottom: Color { Color(hex: current.palette.waterBottom) }
 
+    /// « Objectif atteint » : la teinte profonde du thème, pas un vert système. Un jour réussi est
+    /// un jour *plein* (couleur du thème saturée), pas un jour vert qui jure avec Aurore/Crépuscule.
+    static var success: Color { accentDeep }
+
+    /// Icône « récipient » selon le volume : on ne boit pas des gouttes mais des contenants — le
+    /// symbole devient porteur d'information (« je finis ma gourde → je tape la gourde »).
+    static func contenantIcône(pourML ml: Int) -> String {
+        switch ml {
+        case ..<220:    return "cup.and.saucer.fill"   // petit verre / tasse
+        case 220..<400: return "mug.fill"              // grand verre / mug
+        default:        return "waterbottle.fill"      // gourde
+        }
+    }
+
     static let canvas = Color.adaptive(light: 0xF2F9FF, dark: 0x0A141F)
     static let card = Color.adaptive(light: 0xFFFFFF, dark: 0x132231)
     static let ink = Color.adaptive(light: 0x0B2A4A, dark: 0xEAF6FF)
@@ -58,16 +72,64 @@ enum WelloTheme {
     }
 }
 
+// MARK: - Élévation
+
+/// Deux niveaux d'ombre nommés — pour tenir une échelle d'élévation cohérente au lieu de valeurs
+/// ad hoc (boutons/lentille = `.basse`, cartes = `.haute`).
+enum WelloElevation {
+    case basse   // boutons, lentille de la jauge
+    case haute   // cartes
+
+    var radius: CGFloat { self == .basse ? 6 : 14 }
+    var y: CGFloat { self == .basse ? 3 : 6 }
+    var opacity: Double { 0.06 }
+}
+
+extension View {
+    func welloElevation(_ e: WelloElevation) -> some View {
+        shadow(color: .black.opacity(e.opacity), radius: e.radius, y: e.y)
+    }
+}
+
 // MARK: - Fond d'écran
 
-/// Fond standard : voile clair avec un léger halo bleu en haut.
+/// Fond standard : voile clair avec un halo bleu qui vit avec le moment de la journée — lumière
+/// haute et froide le matin, zénith neutre, plus basse et légèrement chaude le soir. Amplitude
+/// faible (opacité 0.10–0.16 + point d'ancrage) pour ne pas se battre avec les thèmes.
 struct WelloBackground: ViewModifier {
+    var période: DayPeriod = DayPeriod.from(hour: Calendar.current.component(.hour, from: .now))
+
+    private var haloOpacité: Double {
+        switch période {
+        case .matin: 0.16   // lumière haute et présente
+        case .midi:  0.10   // zénith neutre
+        case .apresMidi: 0.12
+        case .soiree: 0.11
+        case .nuit:  0.10   // veilleuse discrète
+        }
+    }
+
+    /// Point bas du halo : haut le matin, il descend au fil de la journée.
+    private var haloBas: UnitPoint {
+        switch période {
+        case .matin: UnitPoint(x: 0.5, y: 0.42)
+        case .midi:  .center
+        case .apresMidi: UnitPoint(x: 0.5, y: 0.62)
+        case .soiree, .nuit: UnitPoint(x: 0.5, y: 0.78)
+        }
+    }
+
     func body(content: Content) -> some View {
         content.background(
             ZStack {
                 WelloTheme.canvas
-                LinearGradient(colors: [WelloTheme.accent.opacity(0.14), .clear],
-                               startPoint: .top, endPoint: .center)
+                LinearGradient(colors: [WelloTheme.accent.opacity(haloOpacité), .clear],
+                               startPoint: .top, endPoint: haloBas)
+                // Fin de journée : lueur chaude, basse et très ténue (n'écrase pas la palette active).
+                if période == .soiree || période == .nuit {
+                    LinearGradient(colors: [.clear, Color.orange.opacity(période == .soiree ? 0.06 : 0.03)],
+                                   startPoint: .center, endPoint: .bottom)
+                }
             }
             .ignoresSafeArea()
         )
@@ -99,7 +161,7 @@ struct WaterLogButton: View {
             Task { await action() }
         } label: {
             VStack(spacing: 4) {
-                Image(systemName: "drop.fill").font(.system(size: 15))
+                Image(systemName: WelloTheme.contenantIcône(pourML: ml)).font(.system(size: 16))
                 Text("+\(ml)").font(.system(.headline, design: .rounded)).minimumScaleFactor(0.7).lineLimit(1)
             }
             .foregroundStyle(WelloTheme.accentDeep)          // teinte accent, plus la jauge qui porte la saturation
@@ -108,7 +170,7 @@ struct WaterLogButton: View {
             .background(WelloTheme.accent.opacity(enfoncé ? 0.24 : 0.14),   // fond teinté doux, plus foncé au tap
                         in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             .scaleEffect(enfoncé && !reduceMotion ? 0.92 : 1) // pas de scale si Reduce Motion
-            .shadow(color: .black.opacity(0.05), radius: 4, y: 2)  // affordance discrète (plus de halo saturé)
+            .welloElevation(.basse)                          // affordance discrète (plus de halo saturé)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Ajouter \(ml) millilitres")
@@ -121,7 +183,7 @@ struct WaterMorePill: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: 4) {
-                Image(systemName: "slider.horizontal.3").font(.system(size: 15))
+                Image(systemName: "plus").font(.system(size: 16, weight: .semibold))
                 Text("Autre").font(.system(.headline, design: .rounded))
             }
             .foregroundStyle(WelloTheme.accentDeep)
@@ -163,6 +225,6 @@ struct CardContainer<Content: View>: View {
             .padding(18)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(WelloTheme.card, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-            .shadow(color: .black.opacity(0.06), radius: 14, y: 6)
+            .welloElevation(.haute)
     }
 }

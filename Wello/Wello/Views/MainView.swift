@@ -253,8 +253,8 @@ private struct RhythmCard: View {
     private var teinte: Color {
         switch pace.status {
         case .behind: .orange
-        case .ahead: .green
-        case .done: .green
+        case .ahead: WelloTheme.success
+        case .done: WelloTheme.success
         default: WelloTheme.accent
         }
     }
@@ -294,9 +294,9 @@ private struct SourcesFreshnessCard: View {
                 HStack(spacing: 12) {
                     Image(systemName: météoIndisponible ? "exclamationmark.circle.fill" : "checkmark.circle.fill")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(météoIndisponible ? .orange : .green)
+                        .foregroundStyle(météoIndisponible ? .orange : WelloTheme.success)
                         .frame(width: 34, height: 34)
-                        .background((météoIndisponible ? Color.orange : Color.green).opacity(0.14), in: Circle())
+                        .background((météoIndisponible ? Color.orange : WelloTheme.success).opacity(0.14), in: Circle())
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Sources du jour")
@@ -394,15 +394,17 @@ private struct SourcesFreshnessCard: View {
 }
 
 /// Pastille « série en cours » affichée sous les boutons d'ajout (gratuit, moteur de rétention).
+/// Métaphore aquatique (vague continue) plutôt que la flamme Duolingo : la régularité, c'est
+/// l'eau qui coule sans interruption — cohérent avec l'univers de l'app.
 private struct StreakChip: View {
     let jours: Int
     var body: some View {
-        Label("\(jours) jours d'affilée", systemImage: "flame.fill")
+        Label("\(jours) jours d'affilée", systemImage: "water.waves")
             .font(.system(.subheadline, design: .rounded).weight(.semibold))
-            .foregroundStyle(.orange)
+            .foregroundStyle(WelloTheme.accentDeep)
             .padding(.horizontal, 14)
             .padding(.vertical, 7)
-            .background(.orange.opacity(0.12), in: Capsule())
+            .background(WelloTheme.accent.opacity(0.12), in: Capsule())
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Série en cours : \(jours) jours d'affilée")
     }

@@ -221,7 +221,7 @@ struct HistoryView: View {
     /// Ligne de tendance vs semaine précédente (flèche + écart en litres, coloré).
     private func tendanceLigne(_ bilan: BilanHebdo) -> some View {
         let (icon, teinte): (String, Color) = switch bilan.tendance {
-        case .hausse: ("arrow.up.right", .green)
+        case .hausse: ("arrow.up.right", WelloTheme.success)
         case .baisse: ("arrow.down.right", .orange)
         case .stable: ("arrow.right", WelloTheme.inkSoft)
         }
@@ -285,7 +285,14 @@ struct HistoryView: View {
                             x: .value("Jour", jour.date, unit: .day),
                             y: .value("Atteinte", min(jour.ratio, 1.2))
                         )
-                        .foregroundStyle(jour.atteint ? Color.green : WelloTheme.accent)
+                        // Colonne d'eau : dégradé thème (waterTop clair au sommet = ménisque) pour un
+                        // jour atteint, même dégradé désaturé pour un jour incomplet → on reconnaît
+                        // l'app dans son graphe, et « plein vs pâle » remplace « vert vs bleu ».
+                        .foregroundStyle(jour.atteint
+                            ? AnyShapeStyle(WelloTheme.waterGradient)
+                            : AnyShapeStyle(LinearGradient(colors: [WelloTheme.waterTop.opacity(0.4),
+                                                                    WelloTheme.waterBottom.opacity(0.4)],
+                                                           startPoint: .top, endPoint: .bottom)))
                         .cornerRadius(4)
                         .accessibilityLabel(jour.date.formatted(.dateTime.weekday(.wide).day().month()))
                         .accessibilityValue("\(jour.consommé) sur \(jour.objectif) millilitres, \(Int((jour.ratio * 100).rounded())) pour cent, \(jour.atteint ? "objectif atteint" : "objectif non atteint")")
@@ -337,7 +344,7 @@ struct HistoryView: View {
 
     private func statsCard(_ conso: [Date: Int]) -> some View {
         HStack(spacing: 12) {
-            statTuile("\(série(conso)) j", "série en cours", "flame.fill", .orange)
+            statTuile("\(série(conso)) j", "série en cours", "water.waves", WelloTheme.accentDeep)
             statTuile(litres(HydrationStats.averageConsumed(totals(conso), lastN: 7)), "moyenne 7 j", "drop.fill", WelloTheme.accent)
         }
     }
@@ -372,7 +379,7 @@ struct HistoryView: View {
                         .foregroundStyle(WelloTheme.ink)
                     Spacer()
                     if atteint {
-                        Image(systemName: "checkmark.seal.fill").foregroundStyle(.green)
+                        Image(systemName: "checkmark.seal.fill").foregroundStyle(WelloTheme.success)
                     }
                     Image(systemName: "chevron.right")
                         .font(.system(size: 12, weight: .semibold))
@@ -380,11 +387,11 @@ struct HistoryView: View {
                 }
 
                 ProgressView(value: ratio)
-                    .tint(atteint ? .green : WelloTheme.accent)
+                    .tint(atteint ? WelloTheme.success : WelloTheme.accent)
 
                 HStack {
                     Text("Bu : \(bu) ml")
-                        .foregroundStyle(atteint ? .green : WelloTheme.inkSoft)
+                        .foregroundStyle(atteint ? WelloTheme.success : WelloTheme.inkSoft)
                     Spacer()
                     Text("Objectif : \(goal.totalML) ml")
                         .foregroundStyle(WelloTheme.inkSoft)
@@ -395,19 +402,41 @@ struct HistoryView: View {
     }
 
     private var étatVide: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "drop.fill")
-                .font(.system(size: 44))
-                .foregroundStyle(WelloTheme.accent.opacity(0.6))
-            Text("Aucun historique pour l'instant")
-                .font(.welloEntête)
-                .foregroundStyle(WelloTheme.ink)
-            Text("Tes objectifs quotidiens apparaîtront ici au fil des jours.")
-                .font(.welloProseDouce)
-                .foregroundStyle(WelloTheme.inkSoft)
-                .multilineTextAlignment(.center)
+        // Un écran vide est une invitation à agir : on esquisse derrière le texte le graphe qui
+        // va apparaître (barres fantômes translucides) plutôt qu'un simple aplat gris.
+        ZStack {
+            grapheFantôme
+                .frame(height: 150)
+                .padding(.horizontal, 24)
+                .accessibilityHidden(true)
+            VStack(spacing: 12) {
+                Image(systemName: "drop.fill")
+                    .font(.system(size: 44))
+                    .foregroundStyle(WelloTheme.accent.opacity(0.6))
+                Text("Aucun historique pour l'instant")
+                    .font(.welloEntête)
+                    .foregroundStyle(WelloTheme.ink)
+                Text("Tes objectifs quotidiens apparaîtront ici au fil des jours.")
+                    .font(.welloProseDouce)
+                    .foregroundStyle(WelloTheme.inkSoft)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(24)
+            .background(WelloTheme.canvas.opacity(0.55), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         }
         .padding(40)
+    }
+
+    /// Barres fantômes (hauteurs fixes, aucune donnée) évoquant le futur graphe.
+    private var grapheFantôme: some View {
+        HStack(alignment: .bottom, spacing: 10) {
+            ForEach([0.4, 0.7, 0.55, 0.9, 0.5, 0.75, 0.65], id: \.self) { h in
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .fill(WelloTheme.accent.opacity(0.10))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 150 * h)
+            }
+        }
     }
 
     private func litres(_ ml: Int) -> String {

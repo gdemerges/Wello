@@ -47,7 +47,7 @@ struct ProfileView: View {
                             if entitlements.isUnlocked(.unlimitedHistory) {
                                 Text("Actif")
                                     .font(.system(.subheadline, design: .rounded).weight(.semibold))
-                                    .foregroundStyle(.green)
+                                    .foregroundStyle(WelloTheme.success)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.85)
                             } else {
@@ -378,7 +378,7 @@ struct ProfileView: View {
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: ok ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
-                    .foregroundStyle(ok ? .green : .orange)
+                    .foregroundStyle(ok ? WelloTheme.success : .orange)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(titre).font(.system(.body, design: .rounded))
                     Text(ok ? "Actif" : détailRéparation)
