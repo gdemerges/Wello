@@ -201,6 +201,16 @@
         }
       }
     },
+    "%@%@ vs semaine passée" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@%2$@ vs semaine passée"
+          }
+        }
+      }
+    },
     "%@%lld ml" : {
       "localizations" : {
         "de" : {
@@ -692,6 +702,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld/%lld 毫升，百分之 %lld，%@"
+          }
+        }
+      }
+    },
+    "%lld/%lld" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld/%2$lld"
           }
         }
       }
@@ -2570,6 +2590,9 @@
         }
       }
     },
+    "Cette semaine" : {
+
+    },
     "Chaque kilocalorie dépensée à l'effort ajoute environ 1 ml. Évaporer 1 ml de sueur dissipe ~0,58 kcal, et l'essentiel de l'énergie d'un exercice se transforme en chaleur évacuée par la sueur. On part de l'énergie active (intensité réelle), pas de la seule durée." : {
       "localizations" : {
         "de" : {
@@ -4294,6 +4317,9 @@
         }
       }
     },
+    "Le midi décroche — pense à boire au déjeuner." : {
+
+    },
     "Meilleure série : record de %lld jours" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4805,6 +4831,9 @@
           }
         }
       }
+    },
+    "objectifs atteints" : {
+
     },
     "OK" : {
       "localizations" : {
@@ -6323,6 +6352,9 @@
         }
       }
     },
+    "stable vs semaine passée" : {
+
+    },
     "Suivant" : {
       "localizations" : {
         "de" : {
@@ -6508,6 +6540,12 @@
           }
         }
       }
+    },
+    "Tes après-midis décrochent — cale un verre vers 16 h." : {
+
+    },
+    "Tes matinées sont en retrait — un verre au réveil aide à rattraper." : {
+
     },
     "Tes objectifs quotidiens apparaîtront ici au fil des jours." : {
       "extractionState" : "manual",
@@ -6702,6 +6740,9 @@
         }
       }
     },
+    "Ton hydratation est bien répartie sur la journée. 👌" : {
+
+    },
     "Ton objectif n'est pas un chiffre magique : c'est une somme de termes, chacun fondé sur des données publiées. Voici lesquels, et pourquoi." : {
       "localizations" : {
         "de" : {
@@ -6747,6 +6788,9 @@
           }
         }
       }
+    },
+    "Ton pic d'hydratation est à la mi-journée." : {
+
     },
     "Ton sexe" : {
       "extractionState" : "manual",
@@ -6934,6 +6978,21 @@
         }
       }
     },
+    "Tu as une tranche horaire nettement plus arrosée." : {
+
+    },
+    "Tu bois peu en soirée." : {
+
+    },
+    "Tu bois surtout en soirée." : {
+
+    },
+    "Tu bois surtout l'après-midi." : {
+
+    },
+    "Tu bois surtout le matin — beau réflexe pour démarrer hydraté." : {
+
+    },
     "Tu peux affiner manuellement ta sensibilité à l'effort et à la chaleur, ou appliquer un décalage fixe. Les plafonds de sécurité restent toujours appliqués." : {
       "localizations" : {
         "de" : {
@@ -7027,6 +7086,9 @@
         }
       }
     },
+    "Une bonne part de ton eau part le soir ou la nuit — avancer un peu réduit les réveils nocturnes." : {
+
+    },
     "Une corpulence plus élevée s'accompagne d'un volume hydrique corporel plus grand. On ajuste modérément la base selon ton poids (au maximum ±400 ml), sans basculer vers un calcul au kilo qui surestimerait la cible." : {
       "localizations" : {
         "de" : {
@@ -7072,6 +7134,9 @@
           }
         }
       }
+    },
+    "Une tranche de la journée reste en retrait." : {
+
     },
     "Vise un apport plus élevé pour la prévention des calculs. À régler selon avis médical." : {
       "extractionState" : "manual",

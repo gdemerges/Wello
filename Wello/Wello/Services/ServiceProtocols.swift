@@ -61,6 +61,8 @@ protocol NotificationServicing: Sendable {
     /// le rythme attendu) à partir de l'objectif, du consommé et de la fenêtre d'éveil.
     func planifierRappelsAdaptatifs(auxHeures heures: [Date], objectifML: Int,
                                     consomméML: Int, fenêtre: FenêtreÉveil) async
+    /// Programme (idempotent) la notification hebdomadaire de bilan (dimanche soir, récurrente).
+    func programmerBilanHebdomadaire() async
     /// Programme un rappel post-séance (+500 ml dans l'heure).
     func programmerRappelPostSéance() async
     /// Reprogramme un rappel « plus tard » dans 1h (action snooze depuis une notification).

@@ -29,6 +29,7 @@ struct AnalyticsView: View {
                 tendanceCard(totals)
                 meilleureSérieCard(totals)
                 répartitionCard()
+                insightsCard()
             }
             .padding()
         }
@@ -161,6 +162,64 @@ struct AnalyticsView: View {
                     .frame(height: 170)
                 }
             }
+        }
+    }
+
+    // MARK: Insights
+
+    /// Enseignements tirés de la répartition horaire (« tu bois surtout le matin », « tes
+    /// après-midis décrochent »…). Masquée tant qu'il n'y a pas assez de recul.
+    @ViewBuilder
+    private func insightsCard() -> some View {
+        let insights = GénérateurInsights.analyser(HydrationStats.hydrationByPeriod(entréesHoraires()))
+        if !insights.isEmpty {
+            CardContainer {
+                VStack(alignment: .leading, spacing: 12) {
+                    titre("Ce qu'on observe")
+                    ForEach(insights) { insight in
+                        HStack(spacing: 12) {
+                            Image(systemName: iconeInsight(insight))
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(WelloTheme.accent)
+                                .frame(width: 34, height: 34)
+                                .background(WelloTheme.accent.opacity(0.15), in: Circle())
+                                .accessibilityHidden(true)
+                            Text(texteInsight(insight))
+                                .font(.welloProse)
+                                .foregroundStyle(WelloTheme.ink)
+                            Spacer(minLength: 0)
+                        }
+                        .accessibilityElement(children: .combine)
+                    }
+                }
+            }
+        }
+    }
+
+    private func iconeInsight(_ insight: Insight) -> String {
+        switch insight.genre {
+        case .pic:       "arrow.up.forward.circle.fill"
+        case .creux:     "arrow.down.forward.circle.fill"
+        case .tardif:    "moon.stars.fill"
+        case .équilibré: "checkmark.seal.fill"
+        }
+    }
+
+    /// Rendu localisé d'un insight sémantique (WelloKit) → phrase FR (fallback pour les autres langues).
+    private func texteInsight(_ insight: Insight) -> LocalizedStringKey {
+        switch (insight.genre, insight.période) {
+        case (.pic, .matin):     "Tu bois surtout le matin — beau réflexe pour démarrer hydraté."
+        case (.pic, .midi):      "Ton pic d'hydratation est à la mi-journée."
+        case (.pic, .apresMidi): "Tu bois surtout l'après-midi."
+        case (.pic, .soiree):    "Tu bois surtout en soirée."
+        case (.pic, _):          "Tu as une tranche horaire nettement plus arrosée."
+        case (.creux, .matin):   "Tes matinées sont en retrait — un verre au réveil aide à rattraper."
+        case (.creux, .midi):    "Le midi décroche — pense à boire au déjeuner."
+        case (.creux, .apresMidi): "Tes après-midis décrochent — cale un verre vers 16 h."
+        case (.creux, .soiree):  "Tu bois peu en soirée."
+        case (.creux, _):        "Une tranche de la journée reste en retrait."
+        case (.tardif, _):       "Une bonne part de ton eau part le soir ou la nuit — avancer un peu réduit les réveils nocturnes."
+        case (.équilibré, _):    "Ton hydratation est bien répartie sur la journée. 👌"
         }
     }
 

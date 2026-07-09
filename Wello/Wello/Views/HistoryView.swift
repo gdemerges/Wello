@@ -78,6 +78,7 @@ struct HistoryView: View {
         let premium = entitlements.isUnlocked(.unlimitedHistory)
         return ScrollView {
             LazyVStack(spacing: 16) {
+                bilanHebdoCard(conso)
                 if premium { sélecteurPlage }
                 grapheCard(conso)
                 statsCard(conso)
@@ -162,6 +163,55 @@ struct HistoryView: View {
             Text("30 jours").tag(30)
         }
         .pickerStyle(.segmented)
+    }
+
+    // MARK: Bilan de la semaine
+
+    /// Carte de synthèse hebdomadaire (gratuite) : jours atteints + tendance vs semaine passée.
+    /// La comparaison n'apparaît qu'avec assez d'historique (gratuit borné à 7 j → pas de delta).
+    @ViewBuilder
+    private func bilanHebdoCard(_ conso: [Date: Int]) -> some View {
+        if let bilan = BilanHebdomadaire.calculer(joursRécents: Array(totals(conso).prefix(14))) {
+            CardContainer {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Cette semaine")
+                        .font(.welloEntête)
+                        .foregroundStyle(WelloTheme.ink)
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text("\(bilan.joursAtteints)/\(bilan.joursComptés)")
+                            .font(.system(.title, design: .rounded).weight(.bold))
+                            .foregroundStyle(WelloTheme.ink)
+                        Text("objectifs atteints")
+                            .font(.welloProseDouce)
+                            .foregroundStyle(WelloTheme.inkSoft)
+                    }
+                    if bilan.aComparaison {
+                        tendanceLigne(bilan)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityElement(children: .combine)
+            }
+        }
+    }
+
+    /// Ligne de tendance vs semaine précédente (flèche + écart en litres, coloré).
+    private func tendanceLigne(_ bilan: BilanHebdo) -> some View {
+        let (icon, teinte): (String, Color) = switch bilan.tendance {
+        case .hausse: ("arrow.up.right", .green)
+        case .baisse: ("arrow.down.right", .orange)
+        case .stable: ("arrow.right", WelloTheme.inkSoft)
+        }
+        let signe = bilan.deltaML > 0 ? "+" : (bilan.deltaML < 0 ? "−" : "")
+        let texte: LocalizedStringKey = bilan.tendance == .stable
+            ? "stable vs semaine passée"
+            : "\(signe)\(litres(abs(bilan.deltaML))) vs semaine passée"
+        return Label {
+            Text(texte).font(.welloProseDouce)
+        } icon: {
+            Image(systemName: icon)
+        }
+        .foregroundStyle(teinte)
     }
 
     // MARK: Graphe

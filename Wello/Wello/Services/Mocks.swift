@@ -35,6 +35,7 @@ struct MockNotificationService: NotificationServicing {
     func planifierRappels(objectifML: Int, consomméML: Int) async {}
     func planifierRappelsAdaptatifs(auxHeures heures: [Date], objectifML: Int,
                                     consomméML: Int, fenêtre: FenêtreÉveil) async {}
+    func programmerBilanHebdomadaire() async {}
     func programmerRappelPostSéance() async {}
     func programmerSnooze() async {}
     func annulerTout() async {}

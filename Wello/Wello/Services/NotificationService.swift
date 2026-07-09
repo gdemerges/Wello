@@ -104,6 +104,22 @@ final class NotificationService: NotificationServicing, @unchecked Sendable {
                       message.restantML)
     }
 
+    func programmerBilanHebdomadaire() async {
+        // Récurrent chaque dimanche 19h. Sans catégorie : la notif ouvre l'app (pas d'action +250).
+        center.removePendingNotificationRequests(withIdentifiers: ["wello.bilanhebdo"])
+        let contenu = UNMutableNotificationContent()
+        contenu.title = "Ton bilan de la semaine"
+        contenu.body = "Jours atteints, moyenne, tendance — jette un œil 📊"
+        contenu.sound = .default
+
+        var comps = DateComponents()
+        comps.weekday = 1   // dimanche (1 = dimanche dans le calendrier grégorien)
+        comps.hour = 19
+        let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: true)
+        let req = UNNotificationRequest(identifier: "wello.bilanhebdo", content: contenu, trigger: trigger)
+        try? await center.add(req)
+    }
+
     func programmerRappelPostSéance() async {
         let contenu = UNMutableNotificationContent()
         contenu.title = "Bien joué pour ta séance 💪"

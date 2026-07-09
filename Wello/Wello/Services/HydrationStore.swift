@@ -292,6 +292,8 @@ final class HydrationStore {
     /// sinon (gratuit ou cold-start) → rappels fixes existants. No-op si rappels désactivés.
     private func planifierSelonPalier(objectifML: Int) async {
         guard profilCourant().remindersEnabled else { return }
+        // Bilan hebdomadaire (dimanche soir), récurrent et idempotent — tant que les rappels sont actifs.
+        await notifications.programmerBilanHebdomadaire()
         let consommé = consomméAujourdhui()
         let objectifAtteint = consommé >= objectifML
 
