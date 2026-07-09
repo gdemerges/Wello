@@ -52,6 +52,13 @@ Lier le package local `WelloKit` au target, capability HealthKit, et clés Info.
 `NSLocationWhenInUseUsageDescription`. Détails dans le README.
 Cible WidgetExtension `WelloWidget` : membership des 3 `@Model` + `WelloShared.swift`, lien WelloKit,
 capability App Group `group.Life.Wello` sur l'app ET l'extension.
+Surfaces d'entrée (Siri / Spotlight / Bouton Action / Control Widget) : `AddWaterIntent.swift` a été
+déplacé de `WelloWidget/` vers `App/` (intent partagé) — il doit être membre des DEUX cibles (app +
+`WelloWidget`), comme `HydrationActivityAttributes.swift`. `WaterAppShortcuts.swift` (dossier `App/`,
+cible **app** seule) déclare l'`AppShortcutsProvider` → Siri/Spotlight/Bouton Action, préréglé 250 ml.
+`WelloControl.swift` (dossier `WelloWidget/`, cible widget) = Control Widget iOS 18 (Centre de contrôle /
+écran verrouillé), déjà ajouté à `WelloWidgetBundle` (gardé `if #available(iOS 18)`). Aucune capability
+dédiée ; App Shortcuts s'indexe après le 1ᵉʳ lancement de l'app.
 Live Activity (progression du jour, écran verrouillé + Dynamic Island) : clé Info.plist
 `NSSupportsLiveActivities = YES` sur l'app iPhone ; `HydrationActivityAttributes.swift`
 (dossier `App/`) doit être membre des DEUX cibles (app + `WelloWidget`) ; `HydrationLiveActivity.swift`

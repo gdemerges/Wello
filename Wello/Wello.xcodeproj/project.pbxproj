@@ -135,6 +135,7 @@
 		571E87B82FDB0D4F00D2C2E9 /* Exceptions for "Wello" folder in "WelloWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				App/AddWaterIntent.swift,
 				App/HydrationActivityAttributes.swift,
 				App/WelloShared.swift,
 				Models/DailyGoal.swift,

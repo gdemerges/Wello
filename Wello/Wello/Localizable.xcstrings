@@ -582,6 +582,16 @@
         }
       }
     },
+    "%lld ml ajoutés — tu en es à %@ L aujourd'hui. 💧" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld ml ajoutés — tu en es à %2$@ L aujourd'hui. 💧"
+          }
+        }
+      }
+    },
     "%lld ml de %@" : {
       "localizations" : {
         "de" : {
@@ -1157,6 +1167,9 @@
           }
         }
       }
+    },
+    "Ajouter 250 ml" : {
+
     },
     "Ajouter de l'eau" : {
       "localizations" : {
@@ -3348,6 +3361,9 @@
         }
       }
     },
+    "Enregistre une prise d'eau dans Wello." : {
+
+    },
     "État physiologique" : {
       "localizations" : {
         "de" : {
@@ -5346,6 +5362,9 @@
           }
         }
       }
+    },
+    "Quantité (ml)" : {
+
     },
     "rappel.dansLesTemps" : {
       "extractionState" : "stale",
