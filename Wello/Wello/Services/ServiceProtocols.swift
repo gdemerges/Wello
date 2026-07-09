@@ -57,7 +57,10 @@ protocol NotificationServicing: Sendable {
     func planifierRappels(objectifML: Int, consomméML: Int) async
     /// (Re)planifie les rappels adaptatifs aux heures données (purge les rappels fixes
     /// et adaptatifs précédents). Plafonné par `AdaptiveReminderPlanner.plafondParJour`.
-    func planifierRappelsAdaptatifs(auxHeures heures: [Date]) async
+    /// Le corps de chaque rappel est contextualisé (moment de la journée + retard réel sur
+    /// le rythme attendu) à partir de l'objectif, du consommé et de la fenêtre d'éveil.
+    func planifierRappelsAdaptatifs(auxHeures heures: [Date], objectifML: Int,
+                                    consomméML: Int, fenêtre: FenêtreÉveil) async
     /// Programme un rappel post-séance (+500 ml dans l'heure).
     func programmerRappelPostSéance() async
     /// Reprogramme un rappel « plus tard » dans 1h (action snooze depuis une notification).

@@ -302,7 +302,10 @@ final class HydrationStore {
                 let heures = planner.planRappels(historique: historique, fenêtre: fenêtre,
                                                  now: .now, objectifAtteint: objectifAtteint)
                 étatRappels = ÉtatRappels(mode: .adaptatif, fenêtre: fenêtre)
-                await notifications.planifierRappelsAdaptatifs(auxHeures: heures)
+                await notifications.planifierRappelsAdaptatifs(auxHeures: heures,
+                                                               objectifML: objectifML,
+                                                               consomméML: consommé,
+                                                               fenêtre: fenêtre)
                 return
             }
             étatRappels = ÉtatRappels(mode: .apprentissage, fenêtre: nil)

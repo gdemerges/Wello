@@ -7116,6 +7116,214 @@
           }
         }
       }
+    },
+    "rappel.enAvance": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beau rythme 💧 Encore %lld ml pour boucler ta journée."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Great pace 💧 Just %lld ml left to finish your day."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buen ritmo 💧 Solo te faltan %lld ml para completar el día."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guter Rhythmus 💧 Nur noch %lld ml bis zum Tagesziel."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ottimo ritmo 💧 Ti restano solo %lld ml per completare la giornata."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ótimo ritmo 💧 Faltam só %lld ml para fechar o dia."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "いいペースです💧 目標達成まであと %lld ml。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "节奏不错 💧 今天还差 %lld ml 就达标了。"
+          }
+        }
+      }
+    },
+    "rappel.dansLesTemps": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pile dans les temps 👍 Il te reste %lld ml aujourd'hui."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Right on track 👍 %lld ml left today."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Justo a tiempo 👍 Te quedan %lld ml hoy."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voll im Plan 👍 Heute noch %lld ml."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Perfettamente in linea 👍 Oggi ti restano %lld ml."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No caminho certo 👍 Faltam %lld ml hoje."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "順調です👍 今日はあと %lld ml。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刚好达标节奏 👍 今天还剩 %lld ml。"
+          }
+        }
+      }
+    },
+    "rappel.enRetard": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un petit verre ? Il te reste %lld ml pour ton objectif 💧"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time for a glass? %lld ml to go to reach your goal 💧"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Un vaso? Te faltan %lld ml para tu objetivo 💧"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeit für ein Glas? Noch %lld ml bis zum Ziel 💧"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un bicchiere? Ti mancano %lld ml per l'obiettivo 💧"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Que tal um copo? Faltam %lld ml para sua meta 💧"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一杯どうですか？目標まであと %lld ml 💧"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "喝一杯吧？距离目标还差 %lld ml 💧"
+          }
+        }
+      }
+    },
+    "rappel.grosRetard": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu es en retard sur ton hydratation : encore %lld ml aujourd'hui."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're behind on hydration: %lld ml still to go today."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vas retrasado con la hidratación: aún te faltan %lld ml hoy."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du hinkst beim Trinken hinterher: heute noch %lld ml."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sei indietro con l'idratazione: oggi mancano ancora %lld ml."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Você está atrasado na hidratação: ainda faltam %lld ml hoje."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "水分補給が遅れ気味です。今日はあと %lld ml。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今天喝水有点落后了：还差 %lld ml。"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

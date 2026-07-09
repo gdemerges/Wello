@@ -17,6 +17,7 @@ final class NotificationService: NotificationServicing, @unchecked Sendable {
     private static let idsFixes = ["wello.14h", "wello.17h"]
 
     private let center = UNUserNotificationCenter.current()
+    private let rédacteur = RappelRédacteur()
 
     init() {
         let logger = UNNotificationAction(identifier: Self.actionLog250,
@@ -41,31 +42,43 @@ final class NotificationService: NotificationServicing, @unchecked Sendable {
         // On repart d'une ardoise propre : fixes ET adaptatifs (changement de palier possible).
         center.removePendingNotificationRequests(withIdentifiers: Self.idsFixes + Self.idsAdaptatifs)
 
-        // Rappel de retard à 14h et 17h (dans la fenêtre autorisée 7h–21h).
-        await programmerRappelHoraire(heure: 14, id: "wello.14h")
-        await programmerRappelHoraire(heure: 17, id: "wello.17h")
+        // Rappel de retard à 14h et 17h (dans la fenêtre autorisée 7h–21h). Corps
+        // contextualisé sur la fenêtre d'éveil par défaut (pas d'apprentissage en mode fixe).
+        await programmerRappelHoraire(heure: 14, id: "wello.14h",
+                                      objectifML: objectifML, consomméML: consomméML)
+        await programmerRappelHoraire(heure: 17, id: "wello.17h",
+                                      objectifML: objectifML, consomméML: consomméML)
     }
 
-    func planifierRappelsAdaptatifs(auxHeures heures: [Date]) async {
+    func planifierRappelsAdaptatifs(auxHeures heures: [Date], objectifML: Int,
+                                    consomméML: Int, fenêtre: FenêtreÉveil) async {
         // Purge fixes + adaptatifs avant de reposer (recalcul à chaque log/refresh).
         center.removePendingNotificationRequests(withIdentifiers: Self.idsFixes + Self.idsAdaptatifs)
+        let cal = Calendar.current
         for (i, date) in heures.prefix(AdaptiveReminderPlanner.plafondParJour).enumerated() {
+            let c = cal.dateComponents([.hour, .minute], from: date)
+            let heureMin = (c.hour ?? 0) * 60 + (c.minute ?? 0)
+            let message = rédacteur.message(heureRappelMin: heureMin, objectifML: objectifML,
+                                            consomméML: consomméML, fenêtre: fenêtre)
             let contenu = UNMutableNotificationContent()
             contenu.title = "Hydratation"
-            contenu.body = "Tu n'as pas bu depuis un moment — un verre d'eau 💧 ?"
+            contenu.body = corps(message)
             contenu.categoryIdentifier = Self.catégorieRappel
             contenu.sound = .default
-            let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: date)
+            let comps = cal.dateComponents([.year, .month, .day, .hour, .minute], from: date)
             let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
             let req = UNNotificationRequest(identifier: "wello.adaptif.\(i)", content: contenu, trigger: trigger)
             try? await center.add(req)
         }
     }
 
-    private func programmerRappelHoraire(heure: Int, id: String) async {
+    private func programmerRappelHoraire(heure: Int, id: String,
+                                         objectifML: Int, consomméML: Int) async {
+        let message = rédacteur.message(heureRappelMin: heure * 60, objectifML: objectifML,
+                                        consomméML: consomméML, fenêtre: .défaut)
         let contenu = UNMutableNotificationContent()
         contenu.title = "Hydratation"
-        contenu.body = "Pense à boire pour rester sur ton objectif du jour."
+        contenu.body = corps(message)
         contenu.categoryIdentifier = Self.catégorieRappel
         contenu.sound = .default
 
@@ -75,6 +88,20 @@ final class NotificationService: NotificationServicing, @unchecked Sendable {
         let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
         let req = UNNotificationRequest(identifier: id, content: contenu, trigger: trigger)
         try? await center.add(req)
+    }
+
+    /// Traduit un `MessageRappel` (sémantique, WelloKit) en corps de notification localisé.
+    /// Clés stables + `%lld` (convention du catalogue) plutôt qu'une clé interpolée.
+    private func corps(_ message: MessageRappel) -> String {
+        let clé: String
+        switch message.ton {
+        case .enAvance:     clé = "rappel.enAvance"
+        case .dansLesTemps: clé = "rappel.dansLesTemps"
+        case .enRetard:     clé = "rappel.enRetard"
+        case .grosRetard:   clé = "rappel.grosRetard"
+        }
+        return String(format: NSLocalizedString(clé, comment: "Corps de rappel d'hydratation"),
+                      message.restantML)
     }
 
     func programmerRappelPostSéance() async {
