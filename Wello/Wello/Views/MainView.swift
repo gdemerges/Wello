@@ -53,12 +53,16 @@ struct MainView: View {
                         .padding(.top, 8)
 
                     if objectif > 0 {
-                        RhythmCard(pace: HydrationPaceCalculator.evaluate(
+                        RhythmCard(
+                            pace: HydrationPaceCalculator.evaluate(
+                                goalML: objectif,
+                                consumedML: consommé,
+                                now: .now,
+                                window: store.étatRappels.fenêtre ?? .défaut
+                            ),
                             goalML: objectif,
-                            consumedML: consommé,
-                            now: .now,
-                            window: store.étatRappels.fenêtre ?? .défaut
-                        ))
+                            consumedML: consommé
+                        )
                         .padding(.horizontal)
                     }
 
@@ -192,13 +196,29 @@ struct MainView: View {
     }
 }
 
-/// Carte de rythme intra-journée : transforme l'objectif restant en action concrète.
+/// Carte de rythme intra-journée : une barre de progression où le remplissage = ce qui est bu et
+/// le repère « maintenant » = où l'on devrait en être à cet instant. Le retard/avance se lit d'un
+/// coup d'œil (le repère devant ou derrière le remplissage), sans exposer de chiffre brut.
 private struct RhythmCard: View {
     let pace: HydrationPace
+    let goalML: Int
+    let consumedML: Int
+
+    /// Fraction bue de l'objectif (remplissage de la barre), bornée 0…1.
+    private var fractionBue: Double {
+        guard goalML > 0 else { return 0 }
+        return min(1, max(0, Double(consumedML) / Double(goalML)))
+    }
+
+    /// Fraction « attendue maintenant » (position du repère), bornée 0…1.
+    private var fractionMaintenant: Double {
+        guard goalML > 0 else { return 0 }
+        return min(1, max(0, Double(pace.expectedNowML) / Double(goalML)))
+    }
 
     var body: some View {
         CardContainer {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 16) {
                 HStack(spacing: 10) {
                     Image(systemName: icon)
                         .font(.system(size: 16, weight: .semibold))
@@ -213,17 +233,61 @@ private struct RhythmCard: View {
                         Text(message)
                             .font(.welloProseDouce)
                             .foregroundStyle(WelloTheme.inkSoft)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
 
-                HStack(spacing: 12) {
-                    metric("\(pace.expectedNowML) ml", "attendus maintenant")
-                    metric("\(pace.remainingML) ml", "restants")
-                    metric("\(pace.glassesToGo)", pace.glassesToGo <= 1 ? "verre" : "verres")
+                VStack(alignment: .leading, spacing: 9) {
+                    barre
+                    légende
                 }
             }
         }
         .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilité)
+    }
+
+    /// Barre : piste neutre, remplissage teinté (= bu), fin repère sombre (= attendu maintenant).
+    private var barre: some View {
+        GeometryReader { geo in
+            let largeur = geo.size.width
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(WelloTheme.inkSoft.opacity(0.15))
+                Capsule()
+                    .fill(LinearGradient(colors: [teinte.opacity(0.85), teinte],
+                                         startPoint: .leading, endPoint: .trailing))
+                    .frame(width: max(fractionBue > 0 ? 12 : 0, largeur * fractionBue))
+                if pace.status != .done {
+                    Capsule()
+                        .fill(WelloTheme.ink)
+                        .frame(width: 3, height: 20)
+                        .overlay(Capsule().stroke(WelloTheme.card, lineWidth: 1))
+                        .offset(x: min(largeur - 3, max(0, largeur * fractionMaintenant - 1.5)))
+                        .accessibilityHidden(true)
+                }
+            }
+        }
+        .frame(height: 12)
+        .animation(.easeOut(duration: 0.4), value: fractionBue)
+    }
+
+    /// Légende sous la barre : à gauche l'explication du repère, à droite le reste à boire.
+    private var légende: some View {
+        HStack(spacing: 6) {
+            if pace.status == .done {
+                Image(systemName: "checkmark.seal.fill")
+                    .foregroundStyle(WelloTheme.success)
+                Text("Objectif atteint")
+            } else {
+                Text("maintenant")
+                Spacer(minLength: 8)
+                Text("reste \(pace.remainingML) ml")
+                    .foregroundStyle(WelloTheme.ink)
+            }
+        }
+        .font(.welloLégendeMini)
+        .foregroundStyle(WelloTheme.inkSoft)
     }
 
     private var message: LocalizedStringKey {
@@ -238,6 +302,13 @@ private struct RhythmCard: View {
             "Tu as de l'avance. Garde le rythme sans forcer."
         case .done:
             "Objectif atteint. Le reste de la journée peut rester léger."
+        }
+    }
+
+    private var accessibilité: LocalizedStringKey {
+        switch pace.status {
+        case .done: "Rythme du jour : objectif atteint."
+        default: "Rythme du jour : il reste \(pace.remainingML) ml à boire."
         }
     }
 
@@ -257,22 +328,6 @@ private struct RhythmCard: View {
         case .done: WelloTheme.success
         default: WelloTheme.accent
         }
-    }
-
-    private func metric(_ value: String, _ label: LocalizedStringKey) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(value)
-                .font(.system(.headline, design: .rounded).weight(.bold))
-                .foregroundStyle(WelloTheme.ink)
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
-            Text(label)
-                .font(.welloLégendeMini)
-                .foregroundStyle(WelloTheme.inkSoft)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
