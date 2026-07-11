@@ -43,6 +43,6 @@ final class ThemeStore {
     private func appliquerIcône(_ name: String?) {
         guard UIApplication.shared.supportsAlternateIcons,
               UIApplication.shared.alternateIconName != name else { return }
-        UIApplication.shared.setAlternateIconName(name) { _ in }   // échec ignoré (assets pas encore livrés)
+        UIApplication.shared.setAlternateIconName(name) { _ in }   // échec ignoré (best-effort)
     }
 }
