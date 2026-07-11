@@ -14,8 +14,6 @@ struct MainView: View {
     @Query(sort: \HydrationLog.loggedAt, order: .reverse) private var tousLogs: [HydrationLog]
     @Query(sort: \DailyGoal.date, order: .reverse) private var objectifs: [DailyGoal]
     @Query private var profils: [UserProfile]
-    /// Reflète l'état « rappels coupés pour aujourd'hui » (retour visuel de la cloche).
-    @State private var rappelsCoupésAujourdhui = false
     @State private var afficheSaisie = false
     @State private var fête = false
     @State private var messageFête = "Objectif atteint ! 🎉"
@@ -91,7 +89,7 @@ struct MainView: View {
                         .foregroundStyle(WelloTheme.inkSoft)
                     }
 
-                    if rappelsCoupésAujourdhui {
+                    if store.rappelsCoupésAujourdhui {
                         Label("Rappels coupés pour aujourd'hui", systemImage: "bell.slash.fill")
                             .font(.system(.caption, design: .rounded))
                             .foregroundStyle(WelloTheme.inkSoft)
@@ -120,16 +118,15 @@ struct MainView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         Task {
-                            if rappelsCoupésAujourdhui {
-                                await store.refreshToday(force: true)   // réactive et replanifie
+                            if store.rappelsCoupésAujourdhui {
+                                await store.réactiverRappelsAujourdhui()
                             } else {
                                 await store.couperRappelsAujourdhui()
                             }
-                            rappelsCoupésAujourdhui.toggle()
                         }
                     } label: {
-                        Label(rappelsCoupésAujourdhui ? "Réactiver les rappels" : "Couper les rappels aujourd'hui",
-                              systemImage: rappelsCoupésAujourdhui ? "bell.slash.fill" : "bell")
+                        Label(store.rappelsCoupésAujourdhui ? "Réactiver les rappels" : "Couper les rappels aujourd'hui",
+                              systemImage: store.rappelsCoupésAujourdhui ? "bell.slash.fill" : "bell")
                     }
                 }
             }
@@ -513,7 +510,7 @@ private struct SaisieEauSheet: View {
                     Section {
                         Picker(selection: $drink) {
                             ForEach(DrinkType.allCases, id: \.self) { d in
-                                Label(d.label, systemImage: d.icon).tag(d)
+                                Label(d.libellé, systemImage: d.icon).tag(d)
                             }
                         } label: {
                             Text("Boisson").font(.system(.body, design: .rounded))

@@ -131,8 +131,10 @@ struct ProfileView: View {
                             set: { actif in
                                 profil.remindersEnabled = actif
                                 profil.updatedAt = .now
-                                // Désactivation immédiate : on annule les rappels déjà programmés.
-                                if !actif { Task { await store.couperRappelsAujourdhui() } }
+                                // Désactivation immédiate : on annule les rappels déjà programmés
+                                // (sans poser la coupure « pour aujourd'hui », qui bloquerait une
+                                // réactivation le jour même).
+                                if !actif { Task { await store.annulerRappelsProgrammés() } }
                             })) {
                             label("Rappels intelligents", nil, icon: "bell.fill", teinte: WelloTheme.accentDeep)
                         }
@@ -190,7 +192,7 @@ struct ProfileView: View {
                                             .foregroundStyle(WelloTheme.accent)
                                             .frame(width: 30, height: 30)
                                             .background(WelloTheme.accent.opacity(0.15), in: Circle())
-                                        Text(drink.label).font(.system(.body, design: .rounded))
+                                        Text(drink.libellé).font(.system(.body, design: .rounded))
                                         Spacer()
                                         Text(drinks.coefficient(for: drink),
                                              format: .number.precision(.fractionLength(0...2)))
@@ -456,14 +458,14 @@ struct ProfileView: View {
                             .shadow(color: .black.opacity(0.3), radius: 1)
                     }
                 }
-                Text(t.label)
+                Text(t.libelléLocalisé)
                     .font(.system(.caption, design: .rounded).weight(actif ? .bold : .regular))
                     .foregroundStyle(actif ? WelloTheme.ink : WelloTheme.inkSoft)
             }
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Thème \(t.label)\(verrouillé ? ", verrouillé" : "")\(actif ? ", actif" : "")")
+        .accessibilityLabel("Thème \(t.libelléLocalisé)\(verrouillé ? ", verrouillé" : "")\(actif ? ", actif" : "")")
         .accessibilityHint(verrouillé ? "Ouvre l'offre Wello+" : (actif ? "" : "Appliquer ce thème"))
     }
 

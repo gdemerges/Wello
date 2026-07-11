@@ -61,6 +61,10 @@ final class HydrationStore {
     private(set) var étatRappels = ÉtatRappels()
     /// Fraîcheur des données affichée dans la carte de confiance de l'accueil.
     private(set) var étatSources = ÉtatSourcesHydratation()
+    /// Vrai si l'utilisateur a coupé les rappels pour aujourd'hui (persisté : survit au relaunch
+    /// et à tout nouveau log, contrairement à un simple `@State` de vue). Se réinitialise seul
+    /// le lendemain (comparaison au jour courant, pas de nettoyage explicite nécessaire).
+    private(set) var rappelsCoupésAujourdhui = false
     /// Cache météo du jour (≤ 30 min) en mémoire ; doublé d'un cache persistant (UserDefaults).
     private var météoCache: (snapshot: WeatherSnapshot, capturéeÀ: Date)?
     /// Dernier recalcul réussi : sert à throttler les rafraîchissements redondants.
@@ -74,6 +78,8 @@ final class HydrationStore {
         static let météoDate = "wello.meteo.capturéeA"
         /// UUIDs d'imports externes supprimés (→ epoch), pour ne pas les réimporter le jour même.
         static let pierresTombales = "wello.import.pierresTombales"
+        /// Date du jour où l'utilisateur a coupé les rappels via le bouton cloche de l'accueil.
+        static let rappelsCoupésDate = "wello.rappels.coupesDate"
     }
 
     /// Durée de vie d'une pierre tombale : au-delà, l'échantillon est hors de la fenêtre d'import
@@ -114,6 +120,14 @@ final class HydrationStore {
         self.notifications = notifications
         self.watchSync = watchSync
         self.rappelsAdaptatifsDébloqués = rappelsAdaptatifsDébloqués
+        self.rappelsCoupésAujourdhui = Self.rappelsCoupésEncoreValide()
+    }
+
+    /// Vrai si une coupure « pour aujourd'hui » a été posée ce jour même (sinon périmée : un
+    /// nouveau jour réactive tacitement les rappels sans action explicite de l'utilisateur).
+    private static func rappelsCoupésEncoreValide() -> Bool {
+        guard let date = UserDefaults.standard.object(forKey: Clés.rappelsCoupésDate) as? Date else { return false }
+        return Calendar.current.isDateInToday(date)
     }
 
     /// Récupère ou crée l'unique profil utilisateur.
@@ -137,6 +151,10 @@ final class HydrationStore {
            Calendar.current.isDate(dernier, inSameDayAs: .now) {
             return
         }
+
+        // Réévalue la coupure « pour aujourd'hui » : périmée dès le changement de jour, même si
+        // l'app est restée ouverte au passage de minuit sans action explicite de l'utilisateur.
+        rappelsCoupésAujourdhui = Self.rappelsCoupésEncoreValide()
 
         let profil = profilCourant()
         guard let sexe = profil.sexe else {
@@ -285,9 +303,26 @@ final class HydrationStore {
         await notifications.programmerSnooze()
     }
 
-    /// Coupe tous les rappels jusqu'à demain (reprogrammés au prochain refresh).
+    /// Coupe tous les rappels jusqu'à demain (bouton cloche de l'accueil). Persisté : un log
+    /// ou un refresh qui suit dans la même journée ne doit pas silencieusement les reprogrammer.
     func couperRappelsAujourdhui() async {
+        UserDefaults.standard.set(Date.now, forKey: Clés.rappelsCoupésDate)
+        rappelsCoupésAujourdhui = true
         await notifications.désactiverPourLaJournée()
+    }
+
+    /// Réactive les rappels coupés pour aujourd'hui et les replanifie immédiatement.
+    func réactiverRappelsAujourdhui() async {
+        UserDefaults.standard.removeObject(forKey: Clés.rappelsCoupésDate)
+        rappelsCoupésAujourdhui = false
+        await refreshToday(force: true)
+    }
+
+    /// Annule les rappels déjà programmés, sans poser la coupure « pour aujourd'hui » (utilisé
+    /// quand l'utilisateur désactive les rappels intelligents globalement au Profil ; distinct
+    /// du bouton cloche pour ne pas bloquer une réactivation le jour même).
+    func annulerRappelsProgrammés() async {
+        await notifications.annulerTout()
     }
 
     /// Enregistre une prise (eau ou autre boisson) : SwiftData (source de vérité) + écriture
@@ -376,6 +411,9 @@ final class HydrationStore {
         guard profilCourant().remindersEnabled else { return }
         // Bilan hebdomadaire (dimanche soir), récurrent et idempotent — tant que les rappels sont actifs.
         await notifications.programmerBilanHebdomadaire()
+        // Coupure « pour aujourd'hui » : ne pas reprogrammer les rappels du jour (un log ou un
+        // refresh qui suit ne doit pas silencieusement les ressusciter avant demain).
+        guard !rappelsCoupésAujourdhui else { return }
         let consommé = consomméAujourdhui()
         let objectifAtteint = consommé >= objectifML
 
