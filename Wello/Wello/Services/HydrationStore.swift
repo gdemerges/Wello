@@ -145,6 +145,12 @@ final class HydrationStore {
         }
         dernierRefresh = .now
 
+        // Affichage immédiat : au démarrage à froid, `breakdown` est nil et les cartes (rythme,
+        // détail, sources) restent masquées tant que HealthKit + GPS + météo n'ont pas répondu.
+        // On amorce donc l'UI avec le dernier objectif du jour déjà persisté, avant tout `await` ;
+        // le calcul complet ci-dessous l'affinera ensuite en douceur.
+        if breakdown == nil { breakdown = objectifDuJourPersisté() }
+
         // Demande d'autorisation HealthKit une seule fois par session (inutile ensuite).
         if !autorisationDemandée {
             await healthKit.requestAuthorization()
@@ -492,6 +498,22 @@ final class HydrationStore {
         rechargerWidgets()
         pousserSnapshotWatch()
         rafraîchirLiveActivité()
+    }
+
+    /// Reconstruit le `GoalBreakdown` du jour à partir du `DailyGoal` persisté, s'il existe.
+    /// Sert à amorcer l'affichage au démarrage à froid avant le recalcul asynchrone. Le plafond
+    /// de sécurité est déduit (total bridé sous le besoin physiologique).
+    private func objectifDuJourPersisté() -> GoalBreakdown? {
+        let jour = Calendar.current.startOfDay(for: .now)
+        let descripteur = FetchDescriptor<DailyGoal>(predicate: #Predicate { $0.date == jour })
+        guard let g = try? modelContext.fetch(descripteur).first else { return nil }
+        let physiologique = g.baseML + g.activityBonusML + g.weatherBonusML + g.altitudeBonusML
+            + g.lifeStageBonusML + g.renalBonusML + g.bodyBonusML + g.manualAdjustmentML
+        return GoalBreakdown(baseML: g.baseML, activityBonusML: g.activityBonusML,
+                             weatherBonusML: g.weatherBonusML, altitudeBonusML: g.altitudeBonusML,
+                             lifeStageBonusML: g.lifeStageBonusML, renalBonusML: g.renalBonusML,
+                             bodyBonusML: g.bodyBonusML, manualAdjustmentML: g.manualAdjustmentML,
+                             totalML: g.totalML, plafondAppliqué: g.totalML < physiologique)
     }
 
     private func upsertDailyGoal(_ r: GoalBreakdown) {
