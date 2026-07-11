@@ -41,6 +41,9 @@ final class NotificationService: NotificationServicing, @unchecked Sendable {
     func planifierRappels(objectifML: Int, consomméML: Int) async {
         // On repart d'une ardoise propre : fixes ET adaptatifs (changement de palier possible).
         center.removePendingNotificationRequests(withIdentifiers: Self.idsFixes + Self.idsAdaptatifs)
+        // Objectif déjà atteint : rien à rappeler (symétrique au chemin adaptatif, qui renvoie
+        // déjà [] dans ce cas). Sans ce garde-fou, un rappel « encore 0 ml » tombait à 17h.
+        guard consomméML < objectifML else { return }
 
         // Rappel de retard à 14h et 17h (dans la fenêtre autorisée 7h–21h). Corps
         // contextualisé sur la fenêtre d'éveil par défaut (pas d'apprentissage en mode fixe).
