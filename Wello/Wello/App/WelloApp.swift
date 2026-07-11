@@ -47,7 +47,6 @@ struct WelloApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
-                .environment(\.locale, Locale(identifier: "fr_FR"))   // app francophone : dates/nombres en FR
                 .environment(store)
                 .environment(entitlements)
                 .environment(drinks)

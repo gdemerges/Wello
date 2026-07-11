@@ -165,12 +165,12 @@ struct AnalyticsView: View {
                     Chart {
                         ForEach(répartition, id: \.period) { tranche in
                             BarMark(
-                                x: .value("Tranche", tranche.period.label),
+                                x: .value("Tranche", tranche.period.libellé),
                                 y: .value("ml", tranche.ml)
                             )
                             .foregroundStyle(WelloTheme.accent)
                             .cornerRadius(4)
-                            .accessibilityLabel(tranche.period.label)
+                            .accessibilityLabel(tranche.period.libellé)
                             .accessibilityValue("\(tranche.ml) millilitres")
                         }
                     }
@@ -210,7 +210,7 @@ struct AnalyticsView: View {
 
     private func familleTuile(_ stat: DrinkFamilyStat) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(stat.family.label)
+            Text(stat.family.libellé)
                 .font(.system(.caption, design: .rounded).weight(.semibold))
                 .foregroundStyle(WelloTheme.inkSoft)
             Text(litres(stat.effectiveML))
@@ -222,7 +222,7 @@ struct AnalyticsView: View {
                 .font(.system(.caption2, design: .rounded))
                 .foregroundStyle(WelloTheme.inkSoft)
             if let période = stat.dominantPeriod {
-                Text("surtout \(période.label.lowercased())")
+                Text("surtout \(période.libellé.lowercased())")
                     .font(.system(.caption2, design: .rounded))
                     .foregroundStyle(WelloTheme.inkSoft)
                     .lineLimit(1)
@@ -245,10 +245,10 @@ struct AnalyticsView: View {
                 .background(couleurFamille(stat.family).opacity(0.15), in: Circle())
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 1) {
-                Text(stat.drink.label)
+                Text(stat.drink.libellé)
                     .font(.system(.subheadline, design: .rounded).weight(.medium))
                     .foregroundStyle(WelloTheme.ink)
-                Text(stat.dominantPeriod.map { "créneau dominant : \($0.label.lowercased())" } ?? "\(stat.count) prise(s)")
+                Text(stat.dominantPeriod.map { "créneau dominant : \($0.libellé.lowercased())" } ?? "\(stat.count) prise(s)")
                     .font(.system(.caption2, design: .rounded))
                     .foregroundStyle(WelloTheme.inkSoft)
             }
@@ -364,7 +364,7 @@ struct AnalyticsView: View {
 
     private func litres(_ ml: Int) -> String {
         let f = NumberFormatter()
-        f.locale = Locale(identifier: "fr_FR")
+        f.locale = .current
         f.maximumFractionDigits = 1
         return (f.string(from: NSNumber(value: Double(ml) / 1000)) ?? "0") + " L"
     }

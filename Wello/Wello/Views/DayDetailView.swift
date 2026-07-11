@@ -51,7 +51,7 @@ struct DayDetailView: View {
             Image(systemName: prise.source == "healthkit" && prise.drink == .water ? "heart.fill" : prise.drink.icon)
                 .foregroundStyle(prise.source == "healthkit" && prise.drink == .water ? .pink : WelloTheme.accent)
             VStack(alignment: .leading, spacing: 1) {
-                Text(nommée ? "\(prise.amountML) ml de \(prise.drink.label.lowercased())"
+                Text(nommée ? "\(prise.amountML) ml de \(prise.drink.libellé.lowercased())"
                             : "\(prise.amountML) ml")
                     .font(.system(.body, design: .rounded).weight(.medium))
                     .foregroundStyle(WelloTheme.ink)

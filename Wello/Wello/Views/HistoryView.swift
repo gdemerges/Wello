@@ -441,7 +441,7 @@ struct HistoryView: View {
 
     private func litres(_ ml: Int) -> String {
         let f = NumberFormatter()
-        f.locale = Locale(identifier: "fr_FR")
+        f.locale = .current
         f.maximumFractionDigits = 1
         return (f.string(from: NSNumber(value: Double(ml) / 1000)) ?? "0") + " L"
     }
