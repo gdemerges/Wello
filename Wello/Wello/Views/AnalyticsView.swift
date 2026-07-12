@@ -158,9 +158,7 @@ struct AnalyticsView: View {
             VStack(alignment: .leading, spacing: 12) {
                 titre("Répartition horaire (30 j)")
                 if total == 0 {
-                    Text("Aucune prise enregistrée sur les 30 derniers jours.")
-                        .font(.welloProseDouce)
-                        .foregroundStyle(WelloTheme.inkSoft)
+                    videCarte("clock", "Aucune prise enregistrée sur les 30 derniers jours.")
                 } else {
                     Chart {
                         ForEach(répartition, id: \.period) { tranche in
@@ -188,9 +186,7 @@ struct AnalyticsView: View {
             VStack(alignment: .leading, spacing: 12) {
                 titre("Boissons (30 j)")
                 if entries.isEmpty {
-                    Text("Aucune prise enregistrée sur les 30 derniers jours.")
-                        .font(.welloProseDouce)
-                        .foregroundStyle(WelloTheme.inkSoft)
+                    videCarte("cup.and.saucer", "Aucune prise enregistrée sur les 30 derniers jours.")
                 } else {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                         ForEach(familles) { stat in
@@ -341,6 +337,22 @@ struct AnalyticsView: View {
             .foregroundStyle(WelloTheme.ink)
     }
 
+    // Sous-état vide d'une carte (répartition, boissons) : icône + texte centrés, à la place
+    // du graphe/grille absent — cohérent avec les écrans vides plutôt qu'un texte nu à gauche.
+    private func videCarte(_ icon: String, _ texte: LocalizedStringKey) -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 26))
+                .foregroundStyle(WelloTheme.accent.opacity(0.5))
+            Text(texte)
+                .font(.welloProseDouce)
+                .foregroundStyle(WelloTheme.inkSoft)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
+    }
+
     // Pastille de valeur (posée sur le voile de sa carte) : fond `card` solide → contraste net
     // sans réintroduire une carte élevée dans un panneau voile.
     private func tuile(_ valeur: String, _ légende: String, _ icon: String, _ teinte: Color) -> some View {
@@ -372,19 +384,56 @@ struct AnalyticsView: View {
     }
 
     private var étatVide: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "chart.bar.xaxis")
-                .font(.system(size: 44))
-                .foregroundStyle(WelloTheme.accent.opacity(0.6))
-            Text("Pas encore d'analyses")
-                .font(.welloEntête)
-                .foregroundStyle(WelloTheme.ink)
-            Text("Tes tendances apparaîtront ici au fil des jours de suivi.")
-                .font(.welloProseDouce)
-                .foregroundStyle(WelloTheme.inkSoft)
-                .multilineTextAlignment(.center)
+        // Comme l'Historique, on esquisse derrière le texte la forme des analyses à venir
+        // (tuiles de taux + histogramme fantômes) plutôt qu'un simple aplat : l'écran vide
+        // annonce sa future densité au lieu de sembler cassé.
+        ZStack {
+            analysesFantômes
+                .padding(.horizontal, 24)
+                .accessibilityHidden(true)
+            VStack(spacing: 12) {
+                Image(systemName: "chart.bar.xaxis")
+                    .font(.system(size: 44))
+                    .foregroundStyle(WelloTheme.accent.opacity(0.6))
+                Text("Pas encore d'analyses")
+                    .font(.welloEntête)
+                    .foregroundStyle(WelloTheme.ink)
+                Text("Tes tendances apparaîtront ici au fil des jours de suivi.")
+                    .font(.welloProseDouce)
+                    .foregroundStyle(WelloTheme.inkSoft)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(24)
+            .background(WelloTheme.canvas.opacity(0.55), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         }
         .padding(40)
+    }
+
+    /// Esquisse fantôme des analyses à venir : deux tuiles de taux + un histogramme de
+    /// répartition (hauteurs fixes, aucune donnée), à l'aplomb des vraies cartes.
+    private var analysesFantômes: some View {
+        VStack(spacing: 16) {
+            HStack(spacing: 12) {
+                tuileFantôme
+                tuileFantôme
+            }
+            HStack(alignment: .bottom, spacing: 10) {
+                ForEach([0.5, 0.85, 0.65, 0.95, 0.55, 0.7, 0.45], id: \.self) { h in
+                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                        .fill(WelloTheme.accent.opacity(0.10))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 120 * h)
+                }
+            }
+            .frame(height: 120)
+        }
+    }
+
+    private var tuileFantôme: some View {
+        RoundedRectangle(cornerRadius: 16, style: .continuous)
+            .fill(WelloTheme.accent.opacity(0.08))
+            .frame(height: 84)
+            .frame(maxWidth: .infinity)
     }
 }
 
