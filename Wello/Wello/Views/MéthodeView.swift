@@ -146,8 +146,11 @@ struct MéthodeView: View {
                         .foregroundStyle(WelloTheme.inkSoft)
                         .padding(.horizontal, 4)
 
+                    // Palier « voile » : la Méthode est un document de référence, pas 9 modules
+                    // flottants. Plats et teintés, les termes se lisent comme les entrées d'un
+                    // même texte — cohérent avec les chips de l'objectif sur l'accueil.
                     ForEach(Composante.allCases) { c in
-                        CardContainer {
+                        VoilePanel {
                             VStack(alignment: .leading, spacing: 10) {
                                 HStack(spacing: 12) {
                                     Image(systemName: c.icon)

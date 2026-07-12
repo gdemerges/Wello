@@ -85,7 +85,7 @@ struct AnalyticsView: View {
     private func tauxCard(_ totals: [DailyTotal]) -> some View {
         let taux7 = HydrationStats.reachRate(Array(totals.prefix(7)))
         let taux30 = HydrationStats.reachRate(Array(totals.prefix(30)))
-        return CardContainer {
+        return VoilePanel {
             VStack(alignment: .leading, spacing: 12) {
                 titre("Taux d'atteinte")
                 HStack(spacing: 12) {
@@ -108,7 +108,7 @@ struct AnalyticsView: View {
         let étatA11y = delta == 0
             ? "stable par rapport à la moyenne 30 jours"
             : "\(delta > 0 ? "en hausse de" : "en baisse de") \(litres(abs(delta))) par rapport à la moyenne 30 jours"
-        return CardContainer {
+        return VoilePanel {
             VStack(alignment: .leading, spacing: 8) {
                 titre("Tendance")
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
@@ -130,7 +130,7 @@ struct AnalyticsView: View {
 
     private func meilleureSérieCard(_ totals: [DailyTotal]) -> some View {
         let record = HydrationStats.bestStreak(totals)
-        return CardContainer {
+        return VoilePanel {
             HStack(spacing: 14) {
                 Image(systemName: "flame.fill")
                     .font(.system(size: 22))
@@ -341,19 +341,21 @@ struct AnalyticsView: View {
             .foregroundStyle(WelloTheme.ink)
     }
 
+    // Pastille de valeur (posée sur le voile de sa carte) : fond `card` solide → contraste net
+    // sans réintroduire une carte élevée dans un panneau voile.
     private func tuile(_ valeur: String, _ légende: String, _ icon: String, _ teinte: Color) -> some View {
-        CardContainer {
-            VStack(alignment: .leading, spacing: 4) {
-                Image(systemName: icon).foregroundStyle(teinte)
-                Text(valeur)
-                    .font(.system(.title2, design: .rounded).weight(.bold))
-                    .foregroundStyle(WelloTheme.ink)
-                Text(légende)
-                    .font(.welloLégendeMini)
-                    .foregroundStyle(WelloTheme.inkSoft)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+        VStack(alignment: .leading, spacing: 4) {
+            Image(systemName: icon).foregroundStyle(teinte)
+            Text(valeur)
+                .font(.system(.title2, design: .rounded).weight(.bold))
+                .foregroundStyle(WelloTheme.ink)
+            Text(légende)
+                .font(.welloLégendeMini)
+                .foregroundStyle(WelloTheme.inkSoft)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(WelloTheme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(légende) : \(valeur)")
     }

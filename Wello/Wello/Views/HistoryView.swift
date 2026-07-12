@@ -368,12 +368,14 @@ struct HistoryView: View {
 
     // MARK: Carte jour
 
+    // Palier « voile » : la liste des jours est un journal de fiches (savoir de référence), pas
+    // une pile de modules actionnables. Le graphe et le bilan restent les seules cartes élevées.
     private func carteJour(_ goal: DailyGoal, conso: [Date: Int]) -> some View {
         let bu = consommé(conso, pour: goal.date)
         let atteint = bu >= goal.totalML
         let ratio = goal.totalML > 0 ? min(Double(bu) / Double(goal.totalML), 1) : 0
 
-        return CardContainer {
+        return VoilePanel {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
                     Text(goal.date, format: .dateTime.weekday(.wide).day().month())
