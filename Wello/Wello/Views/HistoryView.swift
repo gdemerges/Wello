@@ -349,8 +349,10 @@ struct HistoryView: View {
         }
     }
 
+    // Palier « voile » (plat, teinté) : les stats sont du savoir de référence, pas des modules
+    // actionnables — elles ne concurrencent plus le graphe (seule carte élevée de l'écran).
     private func statTuile(_ valeur: String, _ légende: String, _ icon: String, _ teinte: Color) -> some View {
-        CardContainer {
+        VoilePanel {
             VStack(alignment: .leading, spacing: 4) {
                 Image(systemName: icon).foregroundStyle(teinte)
                 Text(valeur)

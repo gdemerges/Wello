@@ -47,22 +47,17 @@ struct MainView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 28) {
-                    WaterGaugeView(consomméML: consommé, objectifML: objectif, animer: estActif)
-                        .padding(.top, 8)
+                    // Héros composé : jauge + voix d'état serrées ensemble (une seule unité visuelle).
+                    VStack(spacing: 18) {
+                        WaterGaugeView(consomméML: consommé, objectifML: objectif, animer: estActif)
 
-                    if objectif > 0 {
-                        RhythmCard(
-                            pace: HydrationPaceCalculator.evaluate(
-                                goalML: objectif,
-                                consumedML: consommé,
-                                now: .now,
-                                window: store.étatRappels.fenêtre ?? .défaut
-                            ),
-                            goalML: objectif,
-                            consumedML: consommé
-                        )
-                        .padding(.horizontal)
+                        if objectif > 0 {
+                            RythmeSection(goalML: objectif, consumedML: consommé,
+                                          fenêtre: store.étatRappels.fenêtre ?? .défaut)
+                                .padding(.horizontal, 28)
+                        }
                     }
+                    .padding(.top, 8)
 
                     HStack(spacing: 14) {
                         ForEach(Array(montants.enumerated()), id: \.offset) { _, ml in
@@ -193,13 +188,44 @@ struct MainView: View {
     }
 }
 
-/// Carte de rythme intra-journée : une barre de progression où le remplissage = ce qui est bu et
-/// le repère « maintenant » = où l'on devrait en être à cet instant. Le retard/avance se lit d'un
-/// coup d'œil (le repère devant ou derrière le remplissage), sans exposer de chiffre brut.
-private struct RhythmCard: View {
-    let pace: HydrationPace
+/// Voix d'état du jour, sous la jauge : la seule phrase en serif de l'écran (« Au fil de
+/// l'eau. », « Belle avance. »…) + la barre de rythme nue — sans carte, sans icône-cerclée.
+/// La typographie porte le jugement ; la barre porte la position ; la teinte porte l'urgence.
+/// `TimelineView(.everyMinute)` réévalue le rythme même si aucune donnée ne change : le repère
+/// « maintenant » avance avec l'heure (avant, il restait figé tant que le body ne changeait pas).
+private struct RythmeSection: View {
     let goalML: Int
     let consumedML: Int
+    let fenêtre: FenêtreÉveil
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        TimelineView(.everyMinute) { timeline in
+            contenu(pace: HydrationPaceCalculator.evaluate(goalML: goalML, consumedML: consumedML,
+                                                           now: timeline.date, window: fenêtre))
+        }
+    }
+
+    private func contenu(pace: HydrationPace) -> some View {
+        VStack(spacing: 12) {
+            Text(phrase(pace.status))
+                .font(.welloTitre3)
+                .foregroundStyle(pace.status == .done ? WelloTheme.success : WelloTheme.ink)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+            VStack(spacing: 8) {
+                barre(pace: pace)
+                // À l'objectif atteint, la phrase serif porte déjà le message : la barre pleine
+                // suffit comme clôture, pas de légende redondante.
+                if pace.status != .done {
+                    légende(pace: pace)
+                }
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilité(pace))
+    }
 
     /// Fraction bue de l'objectif (remplissage de la barre), bornée 0…1.
     private var fractionBue: Double {
@@ -207,46 +233,12 @@ private struct RhythmCard: View {
         return min(1, max(0, Double(consumedML) / Double(goalML)))
     }
 
-    /// Fraction « attendue maintenant » (position du repère), bornée 0…1.
-    private var fractionMaintenant: Double {
-        guard goalML > 0 else { return 0 }
-        return min(1, max(0, Double(pace.expectedNowML) / Double(goalML)))
-    }
-
-    var body: some View {
-        CardContainer {
-            VStack(alignment: .leading, spacing: 16) {
-                HStack(spacing: 10) {
-                    Image(systemName: icon)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(teinte)
-                        .frame(width: 34, height: 34)
-                        .background(teinte.opacity(0.15), in: Circle())
-                        .accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Rythme du jour")
-                            .font(.welloEntête)
-                            .foregroundStyle(WelloTheme.ink)
-                        Text(message)
-                            .font(.welloProseDouce)
-                            .foregroundStyle(WelloTheme.inkSoft)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-
-                VStack(alignment: .leading, spacing: 9) {
-                    barre
-                    légende
-                }
-            }
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(accessibilité)
-    }
-
-    /// Barre : piste neutre, remplissage teinté (= bu), fin repère sombre (= attendu maintenant).
-    private var barre: some View {
-        GeometryReader { geo in
+    /// Barre nue : piste neutre, remplissage teinté (= bu), fin repère sombre (= attendu maintenant).
+    private func barre(pace: HydrationPace) -> some View {
+        let teinte = teinte(pace.status)
+        let fractionMaintenant = goalML > 0
+            ? min(1, max(0, Double(pace.expectedNowML) / Double(goalML))) : 0
+        return GeometryReader { geo in
             let largeur = geo.size.width
             ZStack(alignment: .leading) {
                 Capsule()
@@ -254,81 +246,62 @@ private struct RhythmCard: View {
                 Capsule()
                     .fill(LinearGradient(colors: [teinte.opacity(0.85), teinte],
                                          startPoint: .leading, endPoint: .trailing))
-                    .frame(width: max(fractionBue > 0 ? 12 : 0, largeur * fractionBue))
+                    .frame(width: max(fractionBue > 0 ? 10 : 0, largeur * fractionBue))
                 if pace.status != .done {
                     Capsule()
                         .fill(WelloTheme.ink)
-                        .frame(width: 3, height: 20)
+                        .frame(width: 3, height: 18)
                         .overlay(Capsule().stroke(WelloTheme.card, lineWidth: 1))
                         .offset(x: min(largeur - 3, max(0, largeur * fractionMaintenant - 1.5)))
                         .accessibilityHidden(true)
                 }
             }
         }
-        .frame(height: 12)
-        .animation(.easeOut(duration: 0.4), value: fractionBue)
+        .frame(height: 10)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.4), value: fractionBue)
     }
 
     /// Légende sous la barre : à gauche l'explication du repère, à droite le reste à boire.
-    private var légende: some View {
+    private func légende(pace: HydrationPace) -> some View {
         HStack(spacing: 6) {
-            if pace.status == .done {
-                Image(systemName: "checkmark.seal.fill")
-                    .foregroundStyle(WelloTheme.success)
-                Text("Objectif atteint")
-            } else {
-                Text("maintenant")
-                Spacer(minLength: 8)
-                Text("reste \(pace.remainingML) ml")
-                    .foregroundStyle(WelloTheme.ink)
-            }
+            Text("maintenant")
+            Spacer(minLength: 8)
+            Text("reste \(pace.remainingML) ml")
+                .foregroundStyle(WelloTheme.ink)
         }
         .font(.welloLégendeMini)
         .foregroundStyle(WelloTheme.inkSoft)
     }
 
-    private var message: LocalizedStringKey {
-        switch pace.status {
-        case .notStarted:
-            "La journée démarre doucement. Ton rythme commencera à l'heure d'éveil."
-        case .onTrack:
-            "Tu es dans le bon rythme. Continue par petites prises régulières."
-        case .behind:
-            "Tu es un peu en retard : vise un verre maintenant, puis reprends tranquillement."
-        case .ahead:
-            "Tu as de l'avance. Garde le rythme sans forcer."
-        case .done:
-            "Objectif atteint. Le reste de la journée peut rester léger."
+    /// La voix éditoriale : courte, aquatique, jamais culpabilisante.
+    private func phrase(_ status: HydrationPaceStatus) -> LocalizedStringKey {
+        switch status {
+        case .notStarted: "La journée se lève."
+        case .onTrack:    "Au fil de l'eau."
+        case .ahead:      "Belle avance."
+        case .behind:     "Un verre pour revenir à flot ?"
+        case .done:       "Objectif atteint"
         }
     }
 
-    private var accessibilité: LocalizedStringKey {
+    private func accessibilité(_ pace: HydrationPace) -> LocalizedStringKey {
         switch pace.status {
         case .done: "Rythme du jour : objectif atteint."
         default: "Rythme du jour : il reste \(pace.remainingML) ml à boire."
         }
     }
 
-    private var icon: String {
-        switch pace.status {
-        case .behind: "clock.badge.exclamationmark"
-        case .ahead: "forward.fill"
-        case .done: "checkmark.seal.fill"
-        default: "clock.fill"
-        }
-    }
-
-    private var teinte: Color {
-        switch pace.status {
+    private func teinte(_ status: HydrationPaceStatus) -> Color {
+        switch status {
         case .behind: .orange
-        case .ahead: WelloTheme.success
-        case .done: WelloTheme.success
+        case .ahead, .done: WelloTheme.success
         default: WelloTheme.accent
         }
     }
 }
 
-/// Carte de confiance : affiche la fraîcheur des sources qui alimentent l'objectif du jour.
+/// Ligne de confiance : la fraîcheur des sources en une ligne discrète (palier « méta »,
+/// texte nu — plus une carte à hauteur des vraies informations). Le détail reste en feuille.
 private struct SourcesFreshnessCard: View {
     let état: ÉtatSourcesHydratation
     let météoIndisponible: Bool
@@ -342,32 +315,26 @@ private struct SourcesFreshnessCard: View {
 
     var body: some View {
         Button { détail = true } label: {
-            CardContainer {
-                HStack(spacing: 12) {
-                    Image(systemName: météoIndisponible ? "exclamationmark.circle.fill" : "checkmark.circle.fill")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(météoIndisponible ? .orange : WelloTheme.success)
-                        .frame(width: 34, height: 34)
-                        .background((météoIndisponible ? Color.orange : WelloTheme.success).opacity(0.14), in: Circle())
-                        .accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Sources du jour")
-                            .font(.welloEntête)
-                            .foregroundStyle(WelloTheme.ink)
-                        Text(résumé)
-                            .font(.welloProseDouce)
-                            .foregroundStyle(WelloTheme.inkSoft)
-                            .lineLimit(2)
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(WelloTheme.inkSoft.opacity(0.6))
-                        .accessibilityHidden(true)
-                }
+            HStack(spacing: 7) {
+                Circle()
+                    .fill(météoIndisponible ? Color.orange : WelloTheme.success)
+                    .frame(width: 7, height: 7)
+                    .accessibilityHidden(true)
+                Text(résumé)
+                    .font(.welloLégendeMini)
+                    .foregroundStyle(WelloTheme.inkSoft)
+                    .lineLimit(1)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(WelloTheme.inkSoft.opacity(0.55))
+                    .accessibilityHidden(true)
             }
+            .frame(minHeight: 44)          // zone tactile pleine malgré la discrétion visuelle
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Sources du jour")
+        .accessibilityValue(résumé)
         .accessibilityHint("Voir le détail des sources")
         .sheet(isPresented: $détail) {
             NavigationStack {
@@ -518,6 +485,31 @@ private struct SaisieEauSheet: View {
                     }
                 }
                 Section {
+                    // Presets des contenants courants : un tap au lieu de dizaines de crans de
+                    // stepper (verre, canette, bouteille…). Le stepper reste pour l'ajustement fin.
+                    FlowLayout(spacing: 8) {
+                        ForEach([100, 150, 250, 330, 500, 750, 1000], id: \.self) { préréglé in
+                            Button {
+                                ml = préréglé
+                            } label: {
+                                Text("\(préréglé)")
+                                    .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                                    .foregroundStyle(ml == préréglé ? .white : WelloTheme.accentDeep)
+                                    .padding(.horizontal, 13)
+                                    .padding(.vertical, 8)
+                                    .background(ml == préréglé ? AnyShapeStyle(WelloTheme.accentDeep)
+                                                               : AnyShapeStyle(WelloTheme.accent.opacity(0.12)),
+                                                in: Capsule())
+                                    .contentShape(Rectangle().inset(by: -5))
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("\(préréglé) millilitres")
+                            .accessibilityAddTraits(ml == préréglé ? .isSelected : [])
+                        }
+                    }
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+
                     Stepper(value: $ml, in: 10...3000, step: 10) {
                         HStack {
                             Text("Quantité").font(.system(.body, design: .rounded))
@@ -525,6 +517,7 @@ private struct SaisieEauSheet: View {
                             Text("\(ml) ml")
                                 .font(.system(.body, design: .rounded).weight(.medium))
                                 .foregroundStyle(WelloTheme.inkSoft)
+                                .contentTransition(.numericText())
                         }
                     }
                 } footer: {
@@ -561,7 +554,8 @@ private struct SaisieEauSheet: View {
                 PaywallView(bénéfice: "Bois ce que tu veux, compté juste")
             }
         }
-        .presentationDetents([.height(premium ? 320 : 240)])
+        // Hauteur : +~110 pt pour la rangée de presets (2 lignes de chips au max).
+        .presentationDetents([.height(premium ? 430 : 350)])
     }
 }
 

@@ -1,8 +1,10 @@
 import SwiftUI
 import WelloKit
 
-/// Carte détaillant la composition de l'objectif du jour (100 % additif).
-/// Chaque ligne est tappable : elle ouvre l'explication sourcée de la composante (« Méthode »).
+/// Panneau « voile » détaillant la composition de l'objectif du jour (100 % additif) : le total
+/// en tête, puis les termes rendus littéraux — des **chips qui s'additionnent**. Chaque chip est
+/// tappable et ouvre l'explication sourcée de la composante (« Méthode »). Compact : ~3 lignes au
+/// lieu de 8 rangées de 44 pt, sans rien perdre des affordances.
 struct BreakdownCard: View {
     let breakdown: GoalBreakdown
     /// Vrai si la météo n'a pas pu être récupérée (le bonus à 0 n'est alors pas significatif).
@@ -16,39 +18,10 @@ struct BreakdownCard: View {
     @State private var méthode = false
 
     var body: some View {
-        CardContainer {
+        VoilePanel {
             VStack(alignment: .leading, spacing: 14) {
-                Text("Détail de l'objectif")
-                    .font(.welloEntête)
-                    .foregroundStyle(WelloTheme.ink)
-
-                // Termes additifs : base + bonus, dans l'ordre. Optionnels masqués si nuls.
-                ligne(.base, "Base (EFSA)", breakdown.baseML)
-                ligne(.activité, "Activité", breakdown.activityBonusML, signe: "+")
-                ligne(.météo, "Météo", breakdown.weatherBonusML, signe: "+")
-                if breakdown.altitudeBonusML > 0 {
-                    ligne(.altitude, "Altitude", breakdown.altitudeBonusML, signe: "+")
-                }
-                if breakdown.lifeStageBonusML > 0 {
-                    ligne(.physiologie, libelléÉtatPhysioKey, breakdown.lifeStageBonusML, signe: "+")
-                }
-                if breakdown.renalBonusML > 0 {
-                    ligne(.rénal, "Besoin rénal", breakdown.renalBonusML, signe: "+")
-                }
-                if breakdown.bodyBonusML != 0 {
-                    // Valeur négative : le "-" est déjà porté par l'entier.
-                    ligne(.corpulence, "Corpulence", breakdown.bodyBonusML,
-                          signe: breakdown.bodyBonusML > 0 ? "+" : "")
-                }
-                if breakdown.manualAdjustmentML != 0 {
-                    ligne(.réglage, "Réglage avancé", breakdown.manualAdjustmentML,
-                          signe: breakdown.manualAdjustmentML > 0 ? "+" : "")
-                }
-
-                Divider().overlay(WelloTheme.inkSoft.opacity(0.25))
-
-                HStack {
-                    Text("Total")
+                HStack(alignment: .firstTextBaseline) {
+                    Text("Objectif du jour")
                         .font(.welloEntête)
                         .foregroundStyle(WelloTheme.ink)
                     Spacer()
@@ -57,6 +30,31 @@ struct BreakdownCard: View {
                         .foregroundStyle(WelloTheme.accentDeep)
                 }
                 .accessibilityElement(children: .combine)
+
+                // Termes additifs en chips (base + bonus, dans l'ordre ; optionnels masqués si nuls).
+                FlowLayout(spacing: 8) {
+                    chip(.base, "Base (EFSA)", breakdown.baseML)
+                    chip(.activité, "Activité", breakdown.activityBonusML, signe: "+")
+                    chip(.météo, "Météo", breakdown.weatherBonusML, signe: "+")
+                    if breakdown.altitudeBonusML > 0 {
+                        chip(.altitude, "Altitude", breakdown.altitudeBonusML, signe: "+")
+                    }
+                    if breakdown.lifeStageBonusML > 0 {
+                        chip(.physiologie, libelléÉtatPhysioKey, breakdown.lifeStageBonusML, signe: "+")
+                    }
+                    if breakdown.renalBonusML > 0 {
+                        chip(.rénal, "Besoin rénal", breakdown.renalBonusML, signe: "+")
+                    }
+                    if breakdown.bodyBonusML != 0 {
+                        // Valeur négative : le "-" est déjà porté par l'entier.
+                        chip(.corpulence, "Corpulence", breakdown.bodyBonusML,
+                             signe: breakdown.bodyBonusML > 0 ? "+" : "")
+                    }
+                    if breakdown.manualAdjustmentML != 0 {
+                        chip(.réglage, "Réglage avancé", breakdown.manualAdjustmentML,
+                             signe: breakdown.manualAdjustmentML > 0 ? "+" : "")
+                    }
+                }
 
                 if météoIndisponible {
                     badge("Météo indisponible — bonus non appliqué", "wifi.slash", .gray)
@@ -88,36 +86,36 @@ struct BreakdownCard: View {
         libelléÉtatPhysio.map { LocalizedStringKey($0) } ?? "État physiologique"
     }
 
-    /// Une ligne du breakdown, tappable → ouvre l'explication sourcée de la composante.
+    /// Un terme de l'objectif en chip tappable → ouvre l'explication sourcée de la composante.
     /// Icône et teinte proviennent de la composante (cohérence avec la feuille de détail).
-    private func ligne(_ composante: Composante, _ libellé: LocalizedStringKey, _ valeur: Int,
-                       signe: String = "") -> some View {
+    private func chip(_ composante: Composante, _ libellé: LocalizedStringKey, _ valeur: Int,
+                      signe: String = "") -> some View {
         Button {
             détail = composante
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: 5) {
                 Image(systemName: composante.icon)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(composante.teinte)
-                    .frame(width: 30, height: 30)
-                    .background(composante.teinte.opacity(0.15), in: Circle())
-                Text(libellé)
-                    .font(.system(.subheadline, design: .rounded))
-                    .foregroundStyle(WelloTheme.inkSoft)
-                Spacer()
-                Text("\(signe)\(valeur) ml")
-                    .font(.system(.body, design: .rounded).weight(.medium))
-                    .foregroundStyle(WelloTheme.ink)
-                Image(systemName: "chevron.right")
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(WelloTheme.inkSoft.opacity(0.4))
+                    .foregroundStyle(composante.teinte)
                     .accessibilityHidden(true)
+                Text(libellé)
+                    .font(.system(.caption, design: .rounded).weight(.medium))
+                    .foregroundStyle(WelloTheme.ink)
+                Text("\(signe)\(valeur)")
+                    .font(.system(.caption, design: .rounded).weight(.bold))
+                    .foregroundStyle(composante.teinte)
             }
-            .contentShape(Rectangle())
+            .padding(.horizontal, 11)
+            .padding(.vertical, 8)
+            .background(WelloTheme.card.opacity(0.9), in: Capsule())
+            .overlay(Capsule().strokeBorder(composante.teinte.opacity(0.25), lineWidth: 1))
+            // Zone tactile étendue au-delà de la capsule (petite visuellement, ≥ 44 pt au doigt).
+            .contentShape(Rectangle().inset(by: -6))
         }
         .buttonStyle(.plain)
-        // Un seul élément VoiceOver par ligne : « Base (EFSA), +200 ml » plutôt que deux swipes.
+        // Un seul élément VoiceOver par chip : « Base (EFSA), 2000 ml » plutôt que deux swipes.
         .accessibilityElement(children: .combine)
+        .accessibilityValue("\(signe)\(valeur) ml")
         .accessibilityHint("Voir l'explication")
     }
 

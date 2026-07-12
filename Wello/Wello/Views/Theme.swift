@@ -228,3 +228,55 @@ struct CardContainer<Content: View>: View {
             .welloElevation(.haute)
     }
 }
+
+/// Panneau « voile » : le palier de matière SOUS la carte — teinté accent, plat, sans ombre.
+/// La matière encode la hiérarchie : carte élevée = vivant/actionnable, voile = savoir de
+/// référence, texte nu = méta. Évite l'écran « pile de cartes blanches équivalentes ».
+struct VoilePanel<Content: View>: View {
+    @ViewBuilder var content: Content
+    var body: some View {
+        content
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(WelloTheme.accent.opacity(0.07),
+                        in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+    }
+}
+
+/// Dispose ses sous-vues en lignes avec retour automatique (comme un texte) : sert aux chips
+/// de composantes de l'objectif et aux presets de quantité. Largeur pilotée par le parent.
+struct FlowLayout: Layout {
+    var spacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let largeur = proposal.width ?? .infinity
+        var x: CGFloat = 0, y: CGFloat = 0, hauteurLigne: CGFloat = 0
+        for sous in subviews {
+            let taille = sous.sizeThatFits(.unspecified)
+            if x > 0 && x + taille.width > largeur {
+                x = 0
+                y += hauteurLigne + spacing
+                hauteurLigne = 0
+            }
+            x += taille.width + spacing
+            hauteurLigne = max(hauteurLigne, taille.height)
+        }
+        return CGSize(width: largeur == .infinity ? max(0, x - spacing) : largeur,
+                      height: y + hauteurLigne)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x = bounds.minX, y = bounds.minY, hauteurLigne: CGFloat = 0
+        for sous in subviews {
+            let taille = sous.sizeThatFits(.unspecified)
+            if x > bounds.minX && x + taille.width > bounds.maxX {
+                x = bounds.minX
+                y += hauteurLigne + spacing
+                hauteurLigne = 0
+            }
+            sous.place(at: CGPoint(x: x, y: y), proposal: .unspecified)
+            x += taille.width + spacing
+            hauteurLigne = max(hauteurLigne, taille.height)
+        }
+    }
+}
