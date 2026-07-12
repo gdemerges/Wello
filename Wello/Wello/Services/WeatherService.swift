@@ -6,9 +6,12 @@ struct WeatherService: WeatherServicing {
 
     func météoDuJour(latitude: Double, longitude: Double) async -> WeatherSnapshot? {
         var comps = URLComponents(string: "https://api.open-meteo.com/v1/forecast")!
+        // Minimisation : 2 décimales (~1,1 km) suffisent largement à la météo — on ne transmet
+        // pas la position pleine précision au tiers. Locale POSIX : point décimal garanti.
+        let arrondi = { String(format: "%.2f", locale: Locale(identifier: "en_US_POSIX"), $0) }
         comps.queryItems = [
-            .init(name: "latitude", value: String(latitude)),
-            .init(name: "longitude", value: String(longitude)),
+            .init(name: "latitude", value: arrondi(latitude)),
+            .init(name: "longitude", value: arrondi(longitude)),
             // Température ressentie max du jour : intègre humidité + vent + rayonnement.
             .init(name: "daily", value: "apparent_temperature_max"),
             .init(name: "forecast_days", value: "1"),

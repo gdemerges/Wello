@@ -39,7 +39,7 @@ struct HistoryView: View {
             .sheet(isPresented: $paywall) {
                 PaywallView(bénéfice: "Garde tout ton historique")
             }
-            .sheet(item: $partage) { ShareSheet(urls: $0.urls) }
+            .sheet(item: $partage, onDismiss: { HydrationExporter.nettoyer() }) { ShareSheet(urls: $0.urls) }
             .alert("Export impossible", isPresented: $erreurExport) {
                 Button("OK", role: .cancel) {}
             } message: {

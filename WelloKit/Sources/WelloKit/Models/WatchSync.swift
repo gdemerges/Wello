@@ -19,11 +19,25 @@ public struct PriseWatch: Sendable, Equatable, Codable, Identifiable {
         ["id": id.uuidString, "amountML": amountML, "loggedAt": loggedAt.timeIntervalSince1970]
     }
 
-    public init?(dictionnaire dict: [String: Any]) {
+    /// Bornes d'une prise plausible : mêmes limites que la saisie manuelle de l'app (10–3000
+    /// via Stepper ; on tolère 1 ml plancher), et une date ni future (> 1 h de dérive d'horloge)
+    /// ni antérieure à 30 j (la file `transferUserInfo` peut livrer tard, jamais si tard).
+    public static let volumePlausibleML = 1...3000
+    public static let dériveFutureMax: TimeInterval = 3600
+    public static let retardLivraisonMax: TimeInterval = 30 * 86_400
+
+    /// Décodage **validant** : garde-fou du canal Watch→iPhone. Le transport WCSession est
+    /// chiffré et jumelé (pas un vecteur d'attaque), mais un bug côté Watch ne doit pas pouvoir
+    /// corrompre SwiftData ni Santé avec un volume négatif/énorme ou une date absurde.
+    public init?(dictionnaire dict: [String: Any], maintenant: Date = .now) {
         guard let ids = dict["id"] as? String, let id = UUID(uuidString: ids),
               let ml = dict["amountML"] as? Int,
               let ts = dict["loggedAt"] as? Double else { return nil }
-        self.init(id: id, amountML: ml, loggedAt: Date(timeIntervalSince1970: ts))
+        let date = Date(timeIntervalSince1970: ts)
+        guard Self.volumePlausibleML.contains(ml),
+              date <= maintenant.addingTimeInterval(Self.dériveFutureMax),
+              date >= maintenant.addingTimeInterval(-Self.retardLivraisonMax) else { return nil }
+        self.init(id: id, amountML: ml, loggedAt: date)
     }
 }
 

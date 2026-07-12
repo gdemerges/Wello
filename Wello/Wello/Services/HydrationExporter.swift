@@ -38,6 +38,18 @@ enum HydrationExporter {
         return url
     }
 
+    /// Supprime les exports Wello de `tmp/` : ce sont des données santé, on ne les laisse pas
+    /// traîner jusqu'à la purge iOS. Appelé à la fermeture de la feuille de partage (les
+    /// destinataires ont déjà consommé les fichiers) — balaie aussi les restes d'exports passés.
+    static func nettoyer() {
+        let fm = FileManager.default
+        guard let fichiers = try? fm.contentsOfDirectory(at: fm.temporaryDirectory,
+                                                         includingPropertiesForKeys: nil) else { return }
+        for f in fichiers where f.lastPathComponent.hasPrefix("Wello-") && f.pathExtension == "csv" {
+            try? fm.removeItem(at: f)
+        }
+    }
+
     private static func jourFichier() -> String {
         let f = DateFormatter()
         f.locale = Locale(identifier: "en_US_POSIX")
