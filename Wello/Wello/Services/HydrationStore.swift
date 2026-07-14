@@ -65,8 +65,15 @@ final class HydrationStore {
     /// et à tout nouveau log, contrairement à un simple `@State` de vue). Se réinitialise seul
     /// le lendemain (comparaison au jour courant, pas de nettoyage explicite nécessaire).
     private(set) var rappelsCoupésAujourdhui = false
+    /// Série d'objectifs atteints en cours (aujourd'hui compris s'il est atteint). Mémoïsée ici
+    /// plutôt que recalculée dans le `body` de l'accueil : sinon chaque évaluation rechargeait
+    /// **tout** l'historique des prises pour en reconstruire le consommé jour par jour.
+    private(set) var sérieCourante = 0
     /// Cache météo du jour (≤ 30 min) en mémoire ; doublé d'un cache persistant (UserDefaults).
     private var météoCache: (snapshot: WeatherSnapshot, capturéeÀ: Date)?
+    /// Recalcul différé demandé par le Profil (un cran de stepper = un `refreshToday` complet
+    /// sinon). Conservé pour annuler le précédent à chaque nouveau cran.
+    private var tâcheRecalcul: Task<Void, Never>?
     /// Dernier recalcul réussi : sert à throttler les rafraîchissements redondants.
     private var dernierRefresh: Date?
     /// L'autorisation HealthKit n'est demandée qu'une fois par session.
@@ -105,6 +112,12 @@ final class HydrationStore {
     /// Fenêtre de throttle du recalcul et de validité du cache météo.
     private static let fenêtreRefresh: TimeInterval = 600    // 10 min
     private static let fenêtreMétéo: TimeInterval = 1800     // 30 min
+    /// Délai de coalescence des réglages du Profil : le temps qu'un utilisateur qui maintient un
+    /// stepper s'arrête, sans que l'objectif affiché paraisse en retard.
+    private static let délaiRecalcul: Duration = .milliseconds(500)
+    /// Horizon de calcul de la série (jours) : borne le fetch, une série plus longue relèverait
+    /// de la fiction.
+    private static let joursSérie = 400
 
     init(modelContext: ModelContext,
          healthKit: HealthKitServicing,
@@ -139,6 +152,19 @@ final class HydrationStore {
         let nouveau = UserProfile()
         modelContext.insert(nouveau)
         return nouveau
+    }
+
+    /// Recalcul demandé par un réglage du Profil (steppers, pickers, toggles). Coalescé : chaque
+    /// nouveau cran annule le précédent, et un seul `refreshToday` part une fois la main levée —
+    /// sans quoi chaque cran déclenchait lecture HealthKit, import des prises Santé et
+    /// replanification des notifications.
+    func demanderRecalcul() {
+        tâcheRecalcul?.cancel()
+        tâcheRecalcul = Task { [weak self] in
+            try? await Task.sleep(for: Self.délaiRecalcul)
+            guard !Task.isCancelled else { return }
+            await self?.refreshToday(force: true)
+        }
     }
 
     /// Recalcule l'objectif du jour à partir du sexe (base EFSA), de l'énergie active et de la
@@ -190,9 +216,7 @@ final class HydrationStore {
         breakdown = resultat
         étatSources.objectifCalculéÀ = .now
         upsertDailyGoal(resultat)
-        rechargerWidgets()
-        pousserSnapshotWatch()
-        rafraîchirLiveActivité()
+        propagerChangement()
 
         let importsAjoutés = await importerEauHealthKit()
         étatSources.importsSantéLusÀ = .now
@@ -331,15 +355,16 @@ final class HydrationStore {
         let entrée = HydrationLog(amountML: ml, loggedAt: .now, source: "app",
                                   drinkType: drink.rawValue, coefficient: coefficient)
         modelContext.insert(entrée)
+        // Avant l'écriture Santé : l'accueil réagit à l'insertion (jauge, fête d'objectif) et doit
+        // lire une série déjà à jour — l'UUID d'échantillon posé plus bas n'affecte rien de tout ça.
+        propagerChangement()
+
         let effectif = max(0, entrée.effectiveML)
         if effectif > 0 { entrée.healthSampleUUID = await healthKit.écrireEau(ml: effectif, date: entrée.loggedAt) }
 
         if let objectif = breakdown?.totalML {
             await planifierSelonPalier(objectifML: objectif)
         }
-        rechargerWidgets()
-        pousserSnapshotWatch()
-        rafraîchirLiveActivité()
     }
 
     /// Annule la prise d'eau la plus récente du jour : retire le HydrationLog (la jauge baisse)
@@ -360,15 +385,13 @@ final class HydrationStore {
         let sampleUUID = dernière.healthSampleUUID
         let importUUID = dernière.healthKitUUID
         modelContext.delete(dernière)
+        propagerChangement()
         await nettoyerSantéAprèsSuppression(source: source, healthSampleUUID: sampleUUID,
                                             healthKitUUID: importUUID, effectif: effectif, date: date)
 
         if let objectif = breakdown?.totalML {
             await planifierSelonPalier(objectifML: objectif)
         }
-        rechargerWidgets()
-        pousserSnapshotWatch()
-        rafraîchirLiveActivité()
     }
 
     /// Supprime une prise précise (depuis le détail d'un jour) : SwiftData + Santé (si saisie
@@ -380,14 +403,12 @@ final class HydrationStore {
         let sampleUUID = log.healthSampleUUID
         let importUUID = log.healthKitUUID
         modelContext.delete(log)
+        propagerChangement()
         await nettoyerSantéAprèsSuppression(source: source, healthSampleUUID: sampleUUID,
                                             healthKitUUID: importUUID, effectif: effectif, date: date)
         if let objectif = breakdown?.totalML {
             await planifierSelonPalier(objectifML: objectif)
         }
-        rechargerWidgets()
-        pousserSnapshotWatch()
-        rafraîchirLiveActivité()
     }
 
     /// Après suppression d'une prise : retire l'échantillon Santé si Wello l'a écrit (par UUID,
@@ -483,6 +504,43 @@ final class HydrationStore {
         WidgetCenter.shared.reloadAllTimelines()
     }
 
+    /// Point de passage unique après toute mutation du consommé ou de l'objectif du jour :
+    /// série, widgets, Watch et Live Activity repartent ensemble.
+    private func propagerChangement() {
+        rafraîchirSérie()
+        rechargerWidgets()
+        pousserSnapshotWatch()
+        rafraîchirLiveActivité()
+    }
+
+    /// Recalcule la série d'objectifs atteints : jours passés contigus (depuis les `DailyGoal`,
+    /// avec leur consommé reconstitué), plus aujourd'hui s'il est atteint. Les deux fetchs sont
+    /// bornés à `joursSérie` — l'historique complet n'est jamais chargé.
+    private func rafraîchirSérie() {
+        let cal = Calendar.current
+        let aujourdhui = cal.startOfDay(for: .now)
+        guard let horizon = cal.date(byAdding: .day, value: -Self.joursSérie, to: aujourdhui) else { return }
+
+        let prises = FetchDescriptor<HydrationLog>(
+            predicate: #Predicate { $0.loggedAt >= horizon && $0.loggedAt < aujourdhui })
+        var conso: [Date: Int] = [:]
+        for log in (try? modelContext.fetch(prises)) ?? [] {
+            conso[cal.startOfDay(for: log.loggedAt), default: 0] += log.effectiveML
+        }
+
+        let objectifsPassés = FetchDescriptor<DailyGoal>(
+            predicate: #Predicate { $0.date >= horizon && $0.date < aujourdhui },
+            sortBy: [SortDescriptor(\.date, order: .reverse)])
+        let passés = ((try? modelContext.fetch(objectifsPassés)) ?? []).map {
+            DailyTotal(consumedML: clampedDayTotal(conso[cal.startOfDay(for: $0.date)] ?? 0),
+                       goalML: $0.totalML)
+        }
+
+        let objectifDuJour = breakdown?.totalML ?? 0
+        let atteintAujourdhui = objectifDuJour > 0 && consomméAujourdhui() >= objectifDuJour
+        sérieCourante = HydrationStats.currentStreak(passés) + (atteintAujourdhui ? 1 : 0)
+    }
+
     /// Construit le mirroir d'état destiné à la Watch à partir de l'objectif/consommé du jour,
     /// du profil minimal et des `id` de prises Watch déjà enregistrées (acquittées).
     private func snapshotWatch() -> WatchSyncSnapshot {
@@ -529,13 +587,11 @@ final class HydrationStore {
         let entrée = HydrationLog(amountML: prise.amountML, loggedAt: prise.loggedAt, source: "watch",
                                   drinkType: "water", coefficient: 1.0, watchUUID: id)
         modelContext.insert(entrée)
+        propagerChangement()
         if entrée.effectiveML > 0 { entrée.healthSampleUUID = await healthKit.écrireEau(ml: entrée.effectiveML, date: entrée.loggedAt) }
         if let objectif = breakdown?.totalML {
             await planifierSelonPalier(objectifML: objectif)
         }
-        rechargerWidgets()
-        pousserSnapshotWatch()
-        rafraîchirLiveActivité()
     }
 
     /// Reconstruit le `GoalBreakdown` du jour à partir du `DailyGoal` persisté, s'il existe.

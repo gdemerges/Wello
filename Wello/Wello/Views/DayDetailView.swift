@@ -6,11 +6,19 @@ import WelloKit
 struct DayDetailView: View {
     let date: Date
     @Environment(HydrationStore.self) private var store
-    @Query(sort: \HydrationLog.loggedAt, order: .reverse) private var tousLogs: [HydrationLog]
+    /// Prises du seul jour affiché : le prédicat borne le fetch à ces 24 h (l'écran chargeait
+    /// jusqu'ici tout l'historique pour n'en garder qu'une journée).
+    @Query private var prises: [HydrationLog]
 
-    private var prises: [HydrationLog] {
-        tousLogs.filter { Calendar.current.isDate($0.loggedAt, inSameDayAs: date) }
+    init(date: Date) {
+        self.date = date
+        let cal = Calendar.current
+        let début = cal.startOfDay(for: date)
+        let fin = cal.date(byAdding: .day, value: 1, to: début) ?? début
+        _prises = Query(filter: #Predicate<HydrationLog> { $0.loggedAt >= début && $0.loggedAt < fin },
+                        sort: \.loggedAt, order: .reverse)
     }
+
     private var total: Int { clampedDayTotal(prises.reduce(0) { $0 + $1.effectiveML }) }
 
     var body: some View {

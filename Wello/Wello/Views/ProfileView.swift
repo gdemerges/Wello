@@ -112,7 +112,7 @@ struct ProfileView: View {
                     Section {
                         Picker(selection: Binding(get: { profil.sexe ?? .homme },
                                                   set: { profil.sexe = $0; profil.updatedAt = .now
-                                                         Task { await store.refreshToday(force: true) } })) {
+                                                         store.demanderRecalcul() })) {
                             Text("Homme").tag(BiologicalSex.homme)
                             Text("Femme").tag(BiologicalSex.femme)
                         } label: {
@@ -129,7 +129,7 @@ struct ProfileView: View {
                     Section {
                         Picker(selection: Binding(get: { profil.etatPhysio },
                                                   set: { profil.etatPhysio = $0; profil.updatedAt = .now
-                                                         Task { await store.refreshToday(force: true) } })) {
+                                                         store.demanderRecalcul() })) {
                             Text("Aucun").tag(PhysiologicalState.aucun)
                             Text("Enceinte").tag(PhysiologicalState.grossesse)
                             Text("Allaitante").tag(PhysiologicalState.allaitement)
@@ -146,13 +146,13 @@ struct ProfileView: View {
                     Section {
                         Toggle(isOn: Binding(get: { profil.renalLithiase },
                                              set: { profil.renalLithiase = $0; profil.updatedAt = .now
-                                                    Task { await store.refreshToday(force: true) } })) {
+                                                    store.demanderRecalcul() })) {
                             label("Calculs rénaux (lithiase)", nil, icon: "cross.case.fill", teinte: .purple)
                         }
                         if profil.renalLithiase {
                             Stepper(value: Binding(get: { profil.renalBonusML },
                                                    set: { profil.renalBonusML = $0; profil.updatedAt = .now
-                                                          Task { await store.refreshToday(force: true) } }),
+                                                          store.demanderRecalcul() }),
                                     in: 500...1500, step: 100) {
                                 label("Apport rénal", "+\(profil.renalBonusML) ml",
                                       icon: "drop.fill", teinte: .purple)
@@ -348,14 +348,14 @@ struct ProfileView: View {
                 }
                 Toggle(isOn: Binding(get: { profil.usesBodyWeight },
                                      set: { profil.usesBodyWeight = $0; profil.updatedAt = .now
-                                            Task { await store.refreshToday(force: true) } })) {
+                                            store.demanderRecalcul() })) {
                     label("Personnaliser selon ma corpulence", nil,
                           icon: "scalemass.fill", teinte: .indigo)
                 }
                 if profil.usesBodyWeight {
                     Stepper(value: Binding(get: { profil.bodyWeightKg },
                                            set: { profil.bodyWeightKg = $0; profil.updatedAt = .now
-                                                  Task { await store.refreshToday(force: true) } }),
+                                                  store.demanderRecalcul() }),
                             in: 40...150, step: 1) {
                         label("Poids", "\(Int(profil.bodyWeightKg)) kg",
                               icon: "figure", teinte: .indigo)
@@ -367,7 +367,7 @@ struct ProfileView: View {
                         profil.weatherSensitivity = 1
                         profil.manualAdjustmentML = 0
                         profil.updatedAt = .now
-                        Task { await store.refreshToday(force: true) }
+                        store.demanderRecalcul()
                     }
                 }
             } else {
@@ -391,7 +391,7 @@ struct ProfileView: View {
             // Arrondi au dixième pour éviter la dérive en virgule flottante au fil des pas.
             let arrondie = (nouvelle * 10).rounded() / 10
             set(arrondie); profil?.updatedAt = .now
-            Task { await store.refreshToday(force: true) }
+            store.demanderRecalcul()
         }), in: CalculatorTuning.multiplierRange, step: 0.1) {
             label(titre, "×" + get().formatted(.number.precision(.fractionLength(1))),
                   icon: icon, teinte: WelloTheme.accent)
@@ -401,7 +401,7 @@ struct ProfileView: View {
     /// Binding d'un réglage entier qui marque `updatedAt` et recalcule l'objectif à chaque changement.
     private func bindingCalcul(get: @escaping () -> Int, set: @escaping (Int) -> Void) -> Binding<Int> {
         Binding(get: get, set: { set($0); profil?.updatedAt = .now
-                                 Task { await store.refreshToday(force: true) } })
+                                 store.demanderRecalcul() })
     }
 
     /// Libellé signé de l'ajustement manuel ("+300 ml", "−200 ml", "0 ml").

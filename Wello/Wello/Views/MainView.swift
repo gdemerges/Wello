@@ -9,39 +9,34 @@ struct MainView: View {
     @Environment(HydrationStore.self) private var store
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// Tous les logs (tri récent→ancien) ; on filtre « aujourd'hui » à l'affichage pour rester
-    /// correct au passage de minuit sans prédicat figé à l'init.
-    @Query(sort: \HydrationLog.loggedAt, order: .reverse) private var tousLogs: [HydrationLog]
-    @Query(sort: \DailyGoal.date, order: .reverse) private var objectifs: [DailyGoal]
+    /// Prises depuis le début de la journée d'ouverture (tri récent→ancien) : le prédicat borne
+    /// le chargement, et le filtre « aujourd'hui » à l'affichage garde l'écran correct si l'app
+    /// reste ouverte au passage de minuit (la veille est alors chargée, mais pas comptée).
+    @Query private var logsRécents: [HydrationLog]
     @Query private var profils: [UserProfile]
     @State private var afficheSaisie = false
     @State private var fête = false
     @State private var messageFête = "Objectif atteint ! 🎉"
     @State private var fêteEstPalier = false
 
+    init(estActif: Bool = true) {
+        self.estActif = estActif
+        let début = Calendar.current.startOfDay(for: .now)
+        _logsRécents = Query(filter: #Predicate<HydrationLog> { $0.loggedAt >= début },
+                             sort: \.loggedAt, order: .reverse)
+    }
+
     private var logsDuJour: [HydrationLog] {
-        tousLogs.filter { Calendar.current.isDateInToday($0.loggedAt) }
+        logsRécents.filter { Calendar.current.isDateInToday($0.loggedAt) }
     }
     private var consommé: Int { clampedDayTotal(logsDuJour.reduce(0) { $0 + $1.effectiveML }) }
     private var objectif: Int { store.breakdown?.totalML ?? 0 }
     private var objectifAtteint: Bool { objectif > 0 && consommé >= objectif }
     private var montants: [Int] { profils.first?.quickAdds ?? [150, 250, 500] }
 
-    /// Série d'objectifs atteints en cours, aujourd'hui compris s'il est atteint.
-    /// On compte les jours passés (contigus, récent→ancien) à partir des `DailyGoal`, puis on
-    /// ajoute aujourd'hui si l'objectif du jour est atteint. Fonction pure déléguée à WelloKit.
-    private var sérieCourante: Int {
-        let cal = Calendar.current
-        var conso: [Date: Int] = [:]
-        for log in tousLogs { conso[cal.startOfDay(for: log.loggedAt), default: 0] += log.effectiveML }
-        let aujourdhui = cal.startOfDay(for: .now)
-        let passés = objectifs.compactMap { g -> DailyTotal? in
-            let d = cal.startOfDay(for: g.date)
-            guard d < aujourdhui else { return nil }
-            return DailyTotal(consumedML: clampedDayTotal(conso[d] ?? 0), goalML: g.totalML)
-        }
-        return HydrationStats.currentStreak(passés) + (objectifAtteint ? 1 : 0)
-    }
+    /// Série d'objectifs atteints en cours, aujourd'hui compris s'il est atteint. Calculée et
+    /// mémoïsée par le store à chaque prise (l'écran ne recharge plus l'historique pour l'obtenir).
+    private var sérieCourante: Int { store.sérieCourante }
 
     var body: some View {
         NavigationStack {
