@@ -1,5 +1,6 @@
 import Foundation
 import HealthKit
+import OSLog
 import WelloKit
 
 /// Implémentation réelle de l'accès HealthKit. Dégrade gracieusement (retours neutres)
@@ -17,12 +18,19 @@ final class HealthKitService: HealthKitServicing, @unchecked Sendable {
     private let sleepType = HKCategoryType(.sleepAnalysis)
 
     func requestAuthorization() async {
-        guard HKHealthStore.isHealthDataAvailable() else { return }
+        guard HKHealthStore.isHealthDataAvailable() else {
+            WelloLog.santé.notice("HealthKit indisponible sur cet appareil")
+            return
+        }
         // Eau aussi en lecture (requête/suppression de nos échantillons) ; énergie active
         // pour estimer la perte sudorale à l'effort.
         let read: Set<HKObjectType> = [workoutType, waterType, alcoholType, energyType, sleepType]
         let write: Set<HKSampleType> = [waterType]
-        try? await store.requestAuthorization(toShare: write, read: read)
+        do {
+            try await store.requestAuthorization(toShare: write, read: read)
+        } catch {
+            WelloLog.santé.error("demande d'autorisation HealthKit échouée : \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     func énergieActiveDuJour() async -> Double {
@@ -91,11 +99,24 @@ final class HealthKitService: HealthKitServicing, @unchecked Sendable {
         // Séances : alimentent le bonus d'activité et le rappel post-séance.
         // Eau/alcool : prises saisies dans une autre app ou au poignet, à importer.
         for type: HKSampleType in [workoutType, waterType, alcoholType] {
-            store.enableBackgroundDelivery(for: type, frequency: .hourly) { _, _ in
-                // Best-effort : un refus (autorisation, entitlement absent) laisse simplement
-                // l'app fonctionner comme avant, au premier plan.
+            let nom = type.identifier
+            store.enableBackgroundDelivery(for: type, frequency: .hourly) { activée, erreur in
+                // Best-effort : un refus (autorisation, entitlement « Background Delivery » absent)
+                // laisse simplement l'app fonctionner comme avant, au premier plan. Mais c'est
+                // exactement la panne qu'on ne verrait jamais sans trace — d'où ce journal.
+                if activée {
+                    WelloLog.santé.notice("livraison en arrière-plan active pour \(nom, privacy: .public)")
+                } else {
+                    WelloLog.santé.error("livraison en arrière-plan refusée pour \(nom, privacy: .public) : \(erreur?.localizedDescription ?? "cause inconnue", privacy: .public)")
+                }
             }
-            let observateur = HKObserverQuery(sampleType: type, predicate: nil) { _, acquitter, _ in
+            let observateur = HKObserverQuery(sampleType: type, predicate: nil) { _, acquitter, erreur in
+                if let erreur {
+                    WelloLog.santé.error("observation \(nom, privacy: .public) en erreur : \(erreur.localizedDescription, privacy: .public)")
+                    acquitter()   // acquitter quand même : sans ça, HealthKit finit par nous couper
+                    return
+                }
+                WelloLog.santé.notice("réveil HealthKit sur \(nom, privacy: .public)")
                 Task {
                     await surChangement()
                     acquitter()
@@ -113,6 +134,9 @@ final class HealthKitService: HealthKitServicing, @unchecked Sendable {
             try await store.save(sample)
             return sample.uuid
         } catch {
+            // La prise reste enregistrée dans Wello (SwiftData = source de vérité) : seule
+            // l'écriture vers Santé a échoué (autorisation d'écriture refusée, le plus souvent).
+            WelloLog.santé.error("écriture d'une prise dans Santé échouée : \(error.localizedDescription, privacy: .public)")
             return nil
         }
     }

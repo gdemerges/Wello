@@ -1,5 +1,6 @@
 import Foundation
 import CoreLocation
+import OSLog
 
 /// Fournit les coordonnées actuelles en one-shot pour alimenter la météo. Best-effort.
 ///
@@ -26,7 +27,11 @@ final class LocationService: NSObject, LocationServicing, CLLocationManagerDeleg
 
     func coordonnéesActuelles() async -> (latitude: Double, longitude: Double)? {
         let statut = manager.authorizationStatus
-        guard statut != .denied, statut != .restricted else { return nil }
+        guard statut != .denied, statut != .restricted else {
+            // Cause n° 1 d'une « météo qui ne marche pas » : l'autorisation, pas le réseau.
+            WelloLog.météo.notice("localisation refusée (statut \(statut.rawValue, privacy: .public)) → pas de météo")
+            return nil
+        }
         if statut == .notDetermined {
             guard await attendreAutorisation() else { return nil }
         }
@@ -67,6 +72,7 @@ final class LocationService: NSObject, LocationServicing, CLLocationManagerDeleg
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        WelloLog.météo.error("fix GPS échoué : \(error.localizedDescription, privacy: .public) → pas de météo")
         let attente = continuationsLocalisation
         continuationsLocalisation = []
         for cont in attente { cont.resume(returning: nil) }

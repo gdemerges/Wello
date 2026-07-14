@@ -14,6 +14,7 @@ struct ProfileView: View {
     @State private var paywall = false
     @State private var effacementDemandé: PortéeEffacement?
     @State private var effacementEnCours = false
+    @State private var signalement = false
 
     private var profil: UserProfile? { profils.first }
 
@@ -23,6 +24,41 @@ struct ProfileView: View {
         case historique   // prises + objectifs + caches ; le profil et l'objectif survivent
         case tout         // + le profil → retour au premier lancement
         var id: Self { self }
+    }
+
+    /// Aucune télémétrie ne remonte de l'app : ce bouton est le seul chemin par lequel un
+    /// problème peut m'être décrit avec l'état technique qui va avec (permissions, fraîcheur des
+    /// sources, crashs MetricKit).
+    @ViewBuilder
+    private var aideSection: some View {
+        Section {
+            Button {
+                signalement = true
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "exclamationmark.bubble.fill")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(WelloTheme.accentDeep)
+                        .frame(width: 30, height: 30)
+                        .background(WelloTheme.accentDeep.opacity(0.15), in: Circle())
+                        .accessibilityHidden(true)
+                    Text("Signaler un problème")
+                        .font(.system(.body, design: .rounded))
+                        .foregroundStyle(WelloTheme.ink)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(WelloTheme.inkSoft.opacity(0.6))
+                        .accessibilityHidden(true)
+                }
+            }
+        } header: {
+            enTête("Aide")
+        } footer: {
+            Text("Prépare un rapport technique (version, permissions, incidents) que tu relis avant de l'envoyer. Wello \(DiagnosticService.version).")
+                .font(.welloLégendeMini)
+        }
+        .listRowBackground(WelloTheme.card)
     }
 
     /// Wello ne garde rien ailleurs que sur l'appareil : l'effacement doit donc être à portée de
@@ -329,6 +365,7 @@ struct ProfileView: View {
                         .listRowBackground(WelloTheme.card)
                     }
 
+                    aideSection
                     confidentialitéSection
                 }
             }
@@ -337,6 +374,7 @@ struct ProfileView: View {
             .navigationTitle("Profil")
             .task { _ = store.profilCourant() }   // garantit l'existence d'un profil
             .sheet(isPresented: $paywall) { PaywallView() }
+            .sheet(isPresented: $signalement) { SignalementView() }
             .confirmationDialog(effacementDemandé == .tout ? "Tout effacer et repartir de zéro ?"
                                                            : "Effacer ton historique ?",
                                 isPresented: Binding(get: { effacementDemandé != nil },

@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 import StoreKit
 import WelloKit
 
@@ -63,7 +64,18 @@ struct StoreKitService: StoreServicing {
     }
 
     func produits() async -> [StoreProduct] {
-        guard let produits = try? await Product.products(for: StoreIDs.tous) else { return [] }
+        let produits: [Product]
+        do {
+            produits = try await Product.products(for: StoreIDs.tous)
+        } catch {
+            // Paywall qui reste sur son spinner : produits absents d'App Store Connect, réseau,
+            // ou identifiants qui ne correspondent pas. Invisible sans trace.
+            WelloLog.achats.error("chargement des produits échoué : \(error.localizedDescription, privacy: .public)")
+            return []
+        }
+        if produits.count < StoreIDs.tous.count {
+            WelloLog.achats.error("produits manquants : \(produits.count, privacy: .public) sur \(StoreIDs.tous.count, privacy: .public) attendus")
+        }
         // Ordre stable : annuel d'abord (mis en avant), puis à vie.
         return produits
             .map(descripteur)
@@ -80,7 +92,10 @@ struct StoreKitService: StoreServicing {
             case .verified(let t):
                 await t.finish()
                 return .success
-            case .unverified(let t, _):
+            case .unverified(let t, let erreur):
+                // Signature invalide : aucun accès accordé. À tracer — c'est soit une fraude, soit
+                // (bien plus probable) une config sandbox/ASC cassée qui bloquera tous les achats.
+                WelloLog.achats.error("transaction non vérifiée : \(erreur.localizedDescription, privacy: .public)")
                 await t.finish()   // vide la file ; aucun accès accordé sur une transaction non vérifiée
                 return .pending
             }
@@ -94,8 +109,15 @@ struct StoreKitService: StoreServicing {
     }
 
     func restaurer() async -> EntitlementStatus {
-        try? await AppStore.sync()
-        return await statutActuel()
+        do {
+            try await AppStore.sync()
+        } catch {
+            // « J'ai payé et je n'ai plus rien » : le pire avis possible. On veut la cause.
+            WelloLog.achats.error("restauration (AppStore.sync) échouée : \(error.localizedDescription, privacy: .public)")
+        }
+        let statut = await statutActuel()
+        WelloLog.achats.notice("restauration terminée, statut : \(statut == .plus ? "plus" : "free", privacy: .public)")
+        return statut
     }
 
     func observerTransactions() -> AsyncStream<EntitlementStatus> {

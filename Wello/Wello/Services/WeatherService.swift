@@ -1,5 +1,6 @@
 import Foundation
 import WelloKit
+import OSLog
 
 /// Récupère la météo du jour via Open-Meteo (gratuit, sans clé). Best-effort : nil sur échec.
 struct WeatherService: WeatherServicing {
@@ -31,13 +32,22 @@ struct WeatherService: WeatherServicing {
 
         do {
             let (data, réponse) = try await Self.session.data(from: url)
-            guard (réponse as? HTTPURLResponse)?.statusCode == 200 else { return nil }
+            let code = (réponse as? HTTPURLResponse)?.statusCode ?? -1
+            guard code == 200 else {
+                WelloLog.météo.error("Open-Meteo a répondu \(code, privacy: .public) → bonus météo à 0")
+                return nil
+            }
             let dto = try JSONDecoder().decode(OpenMeteoDTO.self, from: data)
-            guard let ressentieMax = dto.daily.apparent_temperature_max.first else { return nil }
+            guard let ressentieMax = dto.daily.apparent_temperature_max.first else {
+                WelloLog.météo.error("réponse Open-Meteo sans température → bonus météo à 0")
+                return nil
+            }
             // `elevation` (m) est renvoyé par défaut par Open-Meteo : alimente le bonus altitude.
             return WeatherSnapshot(apparentTemperatureC: ressentieMax, altitudeM: dto.elevation)
         } catch {
-            return nil   // réseau/API down → météo absente, le calcul tourne quand même
+            // Réseau/API down → météo absente, le calcul tourne quand même (bonus à 0).
+            WelloLog.météo.error("appel Open-Meteo échoué : \(error.localizedDescription, privacy: .public)")
+            return nil
         }
     }
 }

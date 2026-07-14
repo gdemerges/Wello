@@ -16208,6 +16208,335 @@
           }
         }
       }
+    },
+    "Aide" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hilfe"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Help"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayuda"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aiuto"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ヘルプ"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajuda"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "帮助"
+          }
+        }
+      }
+    },
+    "Signaler un problème" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Problem melden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Report a problem"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Informar de un problema"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Segnala un problema"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "問題を報告"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Relatar um problema"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "报告问题"
+          }
+        }
+      }
+    },
+    "Prépare un rapport technique (version, permissions, incidents) que tu relis avant de l'envoyer. Wello %@." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erstellt einen technischen Bericht (Version, Berechtigungen, Vorfälle), den du vor dem Senden prüfst. Wello %@."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prepares a technical report (version, permissions, incidents) that you review before sending. Wello %@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prepara un informe técnico (versión, permisos, incidencias) que revisas antes de enviarlo. Wello %@."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prepara un rapporto tecnico (versione, autorizzazioni, incidenti) che rileggi prima di inviarlo. Wello %@."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "技術レポート（バージョン・権限・不具合）を作成します。送信前に内容を確認できます。Wello %@。"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prepara um relatório técnico (versão, permissões, incidentes) que você revisa antes de enviar. Wello %@."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "生成一份技术报告（版本、权限、故障），你可在发送前查看。Wello %@。"
+          }
+        }
+      }
+    },
+    "Décris ce qui ne va pas dans ton message, et laisse ces informations techniques en dessous : elles disent où l'app a échoué." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beschreibe in deiner Nachricht, was nicht funktioniert, und lass die technischen Angaben darunter stehen: Sie zeigen, wo die App gescheitert ist."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Describe what went wrong in your message, and leave the technical details below: they say where the app failed."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Describe lo que no funciona en tu mensaje y deja debajo estos datos técnicos: dicen dónde ha fallado la app."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descrivi cosa non va nel tuo messaggio e lascia sotto queste informazioni tecniche: dicono dove l'app ha fallito."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "うまくいかない点をメッセージに書き、下の技術情報はそのまま残してください。アプリのどこで失敗したかが分かります。"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descreva o que não funciona na sua mensagem e deixe abaixo estas informações técnicas: elas dizem onde o app falhou."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在你的消息里描述哪里出了问题，并保留下面的技术信息：它们说明了应用在哪一步失败。"
+          }
+        }
+      }
+    },
+    "Aucune donnée de santé, aucune position, aucun volume bu n'est inclus. Rien n'est envoyé automatiquement : tu choisis le destinataire." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es sind keine Gesundheitsdaten, kein Standort und keine Trinkmengen enthalten. Nichts wird automatisch gesendet: Du wählst den Empfänger."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No health data, no location and no intake volumes are included. Nothing is sent automatically: you choose the recipient."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se incluye ningún dato de salud, ninguna ubicación ni ningún volumen ingerido. Nada se envía automáticamente: tú eliges el destinatario."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non sono inclusi dati sanitari, posizione né volumi bevuti. Nulla viene inviato automaticamente: scegli tu il destinatario."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "健康データ・位置情報・飲んだ量は一切含まれません。自動送信もされません。送り先はあなたが選びます。"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhum dado de saúde, nenhuma localização e nenhum volume ingerido é incluído. Nada é enviado automaticamente: você escolhe o destinatário."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不包含任何健康数据、位置或饮水量。也不会自动发送：由你选择收件人。"
+          }
+        }
+      }
+    },
+    "Envoyer le rapport" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bericht senden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send the report"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar el informe"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia il rapporto"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "レポートを送信"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar o relatório"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发送报告"
+          }
+        }
+      }
+    },
+    "Oublier les incidents enregistrés" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gespeicherte Vorfälle verwerfen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forget the recorded incidents"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Olvidar las incidencias guardadas"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dimentica gli incidenti registrati"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "記録された不具合を削除"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esquecer os incidentes registrados"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除已记录的故障"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

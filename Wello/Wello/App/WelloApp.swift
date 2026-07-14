@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 import UserNotifications
 import WelloKit
+import OSLog
 
 @main
 struct WelloApp: App {
@@ -11,6 +12,8 @@ struct WelloApp: App {
     @State private var entitlements: EntitlementStore
     @State private var drinks: DrinkCatalog
     @State private var theme: ThemeStore
+    /// Crashs/blocages livrés par MetricKit au lancement suivant, conservés localement.
+    @State private var diagnostics = DiagnosticService()
     /// Délégué des notifications, retenu ici (la propriété `delegate` du centre est faible).
     private let notifDelegate: NotificationCoordinator
 
@@ -51,7 +54,10 @@ struct WelloApp: App {
                 .environment(entitlements)
                 .environment(drinks)
                 .environment(theme)
+                .environment(diagnostics)
                 .task {
+                    diagnostics.démarrer()
+                    WelloLog.app.notice("lancement — Wello \(DiagnosticService.version, privacy: .public)")
                     await entitlements.démarrer()
                     theme.enforceEntitlement(unlocked: entitlements.isUnlocked(.themes))
                     // Séances et prises d'eau externes réveillent l'app même fermée : l'objectif,
