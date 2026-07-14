@@ -1,7 +1,7 @@
 # Wello — Suivi d'hydratation (iOS)
 
 App iOS personnelle, mono-utilisateur, 100 % locale. Calcule un objectif d'hydratation
-quotidien personnalisé (sexe, activité HealthKit, météo Open-Meteo, plancher médical) et
+quotidien personnalisé (sexe, activité HealthKit, météo Open-Meteo, contexte médical) et
 aide à le suivre.
 
 ## Arborescence
@@ -18,14 +18,14 @@ Wello/                          ← racine
 
 ## Lancement
 
-1. Ouvrir `Wello/Wello.xcodeproj` dans Xcode 26+ (cible iOS 17+).
+1. Ouvrir `Wello/Wello.xcodeproj` dans Xcode 26+ (cible iOS 18+).
 2. **Lier le package local** : File ▸ Add Package Dependencies ▸ Add Local ▸ choisir le dossier
    `WelloKit`, puis ajouter la bibliothèque `WelloKit` au target `Wello`.
 3. Vérifier que les fichiers de `Wello/Wello/` (App, Models, Services, Views) appartiennent au
    target `Wello` (avec les groupes synchronisés Xcode 16+, ils sont pris en compte
    automatiquement ; sinon, *Add Files to "Wello"*).
 4. Configurer les capabilities & l'Info.plist (voir ci-dessous).
-5. Cmd+R sur un simulateur ou un device iOS 17+.
+5. Cmd+R sur un simulateur ou un device iOS 18+.
 
 ## Tests de la logique métier
 
@@ -56,15 +56,18 @@ activité      = min(énergie active kcal × 1, 1000)       // 1 ml/kcal (Health
 météo         = min(max(0, ressentie°C − 27) × 50, 600)  // ressentie = apparent temp, 0 si indispo
 altitude      = min(max(0, alt − 2000)/1000 × 150, 500)  // Open-Meteo, 0 en plaine/indispo
 corpulence    = clamp(base × 0,5 × (poids−réf)/réf, ±400) // Wello+, réf 70/60 kg ; 0 si non activé
-physiologique = base + activité + météo + altitude + physioÉtat + rénal + corpulence + ajust. manuel
-total         = min(4000, max(plancher médical, physiologique))
+physiologique = max(0, base + activité + météo + altitude + physioÉtat + rénal + corpulence + ajust. manuel)
+total         = min(4000, physiologique)                 // unique garde-fou : le plafond global
 ```
 
 La base provient des **apports de référence EFSA (2010)** : eau totale 2,5 L/j (homme), 2,0 L/j
 (femme), dont ~80 % via les boissons → cible de boisson **2000 ml / 1600 ml**. On ne part pas du
 poids (× 35 ml/kg) : ce coefficient estime l'eau *totale* (boissons + aliments + eau métabolique)
 et surestime la cible de boisson de ~20-30 %. La personnalisation se fait par sexe + activité
-(kcal) + météo, et le **plancher médical** reste prioritaire.
+(kcal) + météo. Il n'y a **pas de plancher** : la base EFSA en tient lieu — seuls des réglages
+explicitement choisis par l'utilisateur (corpulence, ajustement manuel, tous deux Wello+ et
+bornés) peuvent la faire descendre. L'unique garde-fou est le **plafond global de 4000 ml**, qui
+borne le total quel que soit le cumul des bonus.
 
 Le bonus d'activité dérive de l'**énergie active brûlée** (kcal, HealthKit) plutôt que de la
 seule durée : la perte sudorale à l'effort est proportionnelle à la chaleur métabolique
@@ -86,9 +89,12 @@ n'adopte **pas** le « 35 mL/kg » (qui estime l'eau *totale* et surestime la ci
 corpulence ne fait qu'*affiner* le socle EFSA. Le calcul complet et ses sources sont exposés dans
 l'app via l'écran **« Méthode »** (chaque ligne du détail de l'objectif est tappable).
 
-## Où ajuster le plancher médical
+## Où ajuster l'objectif
 
-Onglet **Profil** ▸ section « Plancher médical » (1000–4000 ml). Valeur par défaut : 2500 ml.
+Onglet **Profil** : le sexe fixe la base EFSA ; l'état physiologique (grossesse/allaitement) et le
+besoin rénal (lithiase, 500–1500 ml) ajoutent leurs termes. En **Wello+**, la section « Réglage
+avancé » ouvre les sensibilités effort/chaleur (×0,5–1,5), l'ajustement manuel et la corpulence.
+Le plafond de 4000 ml s'applique toujours.
 
 ## Architecture
 
@@ -130,7 +136,7 @@ App Group (pas de CloudKit : l'app est volontairement locale et mono-appareil).
 Widgets d'écran d'accueil (petit : anneau d'objectif ; moyen : barre + boutons d'ajout rapide
 +150/+250/+500) et accessoire d'écran verrouillé (anneau). Partage de données app↔widget via
 l'App Group `group.Life.Wello` (store SwiftData unique, migré depuis le store local au premier
-lancement). L'ajout rapide écrit une prise sans ouvrir l'app (App Intents, iOS 17).
+lancement). L'ajout rapide écrit une prise sans ouvrir l'app (App Intents).
 
 ## App Apple Watch (Phase 2 — livrée)
 

@@ -4,6 +4,16 @@ App iOS personnelle de suivi d'hydratation, 100 % locale, mono-appareil.
 **Le `README.md` fait foi** pour l'architecture, la logique de calcul, les permissions et le
 périmètre Phase 1/2 — le lire plutôt que ré-explorer.
 
+## Vault Obsidian
+
+Le suivi de ce projet est documenté dans :
+`/Users/guillaumedemerges/Documents/Life/wiki/projects/Wello` (note principale `Wello.md`)
+(+ `Wello-Architecture.md`, `Wello-Publication-App-Store.md`, `Wello-Methode-scientifique.md` dans le même dossier)
+
+**Règle** : à la fin d'une session de travail significative (feature terminée, architecture
+changée, checklist publication avancée), mets à jour la note concernée avec les changements. Garde
+le format existant (frontmatter, sections, checkboxes cochées/décochées).
+
 ## Carte du projet
 
 - `WelloKit/` — Swift Package, **logique métier pure et testable en CLI** (`HydrationCalculator`,
@@ -29,12 +39,12 @@ cd WelloKit && swift test
 # 2. App iOS — type-check hors Xcode (depuis la racine)
 rm -rf /tmp/wellomod && mkdir -p /tmp/wellomod
 xcrun --sdk iphonesimulator swiftc -emit-module -module-name WelloKit \
-  -target arm64-apple-ios17.0-simulator \
+  -target arm64-apple-ios18.0-simulator \
   WelloKit/Sources/WelloKit/*.swift WelloKit/Sources/WelloKit/Models/*.swift \
   -emit-module-path /tmp/wellomod/WelloKit.swiftmodule
 xcrun --sdk iphonesimulator swiftc -typecheck -D DEBUG \
   -enable-upcoming-feature MemberImportVisibility \
-  -target arm64-apple-ios17.0-simulator -I /tmp/wellomod \
+  -target arm64-apple-ios18.0-simulator -I /tmp/wellomod \
   Wello/Wello/App/*.swift Wello/Wello/Models/*.swift \
   Wello/Wello/Services/*.swift Wello/Wello/Views/*.swift
 ```
@@ -62,9 +72,9 @@ Surfaces d'entrée (Siri / Spotlight / Bouton Action / Control Widget) : `AddWat
 déplacé de `WelloWidget/` vers `App/` (intent partagé) — il doit être membre des DEUX cibles (app +
 `WelloWidget`), comme `HydrationActivityAttributes.swift`. `WaterAppShortcuts.swift` (dossier `App/`,
 cible **app** seule) déclare l'`AppShortcutsProvider` → Siri/Spotlight/Bouton Action, préréglé 250 ml.
-`WelloControl.swift` (dossier `WelloWidget/`, cible widget) = Control Widget iOS 18 (Centre de contrôle /
-écran verrouillé), déjà ajouté à `WelloWidgetBundle` (gardé `if #available(iOS 18)`). Aucune capability
-dédiée ; App Shortcuts s'indexe après le 1ᵉʳ lancement de l'app.
+`WelloControl.swift` (dossier `WelloWidget/`, cible widget) = Control Widget (Centre de contrôle /
+écran verrouillé), déjà ajouté à `WelloWidgetBundle` (sans garde de disponibilité : la cible
+minimale est iOS 18). Aucune capability dédiée ; App Shortcuts s'indexe après le 1ᵉʳ lancement de l'app.
 Live Activity (progression du jour, écran verrouillé + Dynamic Island) : clé Info.plist
 `NSSupportsLiveActivities = YES` sur l'app iPhone ; `HydrationActivityAttributes.swift`
 (dossier `App/`) doit être membre des DEUX cibles (app + `WelloWidget`) ; `HydrationLiveActivity.swift`
@@ -78,7 +88,7 @@ déjà les deux pour le test local. Wello+ est accordé si l'un OU l'autre est a
 Cible watchOS `WelloWatch` : sources dans le **dossier synchronisé** `Wello/WelloWatch Watch App/`
 (c'est CE dossier que la cible compile, pas `Wello/WelloWatch/` — ne pas recréer de doublon), lien WelloKit, capability
 HealthKit + `NSHealthShareUsageDescription` (lecture énergie active). `WatchConnectivityService.swift`
-appartient à la cible app iPhone. Pas de capability WatchConnectivity (SDK). watchOS 10+.
+appartient à la cible app iPhone. Pas de capability WatchConnectivity (SDK). watchOS 11+.
 Cible complication `WelloWatchWidget` (Watch Widget Extension) : sources dans `Wello/WelloWatchWidget/`,
 lien WelloKit ; `WelloWatchShared.swift` (dossier `WelloWatch Watch App/`) doit être membre des DEUX
 cibles (app Watch + widget) ; capability App Group `group.Life.Wello` sur l'app Watch ET le widget
@@ -100,5 +110,6 @@ les 7 langues (une clé partiellement traduite retombe sur le fr pour les langue
 
 - Tous les refus de permission (HealthKit, localisation, notifications) doivent rester gérés :
   l'app reste pleinement utilisable en saisie manuelle.
-- Objectif d'hydratation plafonné à 4000 ml, jamais sous le plancher médical.
+- Objectif d'hydratation plafonné à 4000 ml (unique garde-fou : il n'y a **pas** de plancher, la
+  base EFSA en tient lieu).
 - Pas de CloudKit : partage app ↔ widget (Phase 2) via App Group.
