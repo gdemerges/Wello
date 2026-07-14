@@ -3,6 +3,16 @@ import WelloKit
 
 /// Récupère la météo du jour via Open-Meteo (gratuit, sans clé). Best-effort : nil sur échec.
 struct WeatherService: WeatherServicing {
+    /// Session dédiée : `URLSession.shared` attend 60 s par défaut. La météo n'est qu'un bonus du
+    /// calcul — sur un réseau dégradé, mieux vaut abandonner vite (objectif sans bonus météo,
+    /// déjà géré) que suspendre le rafraîchissement de longues secondes.
+    private static let session: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 10
+        config.timeoutIntervalForResource = 15
+        config.waitsForConnectivity = false   // hors ligne = échec immédiat, pas d'attente du réseau
+        return URLSession(configuration: config)
+    }()
 
     func météoDuJour(latitude: Double, longitude: Double) async -> WeatherSnapshot? {
         var comps = URLComponents(string: "https://api.open-meteo.com/v1/forecast")!
@@ -20,7 +30,7 @@ struct WeatherService: WeatherServicing {
         guard let url = comps.url else { return nil }
 
         do {
-            let (data, réponse) = try await URLSession.shared.data(from: url)
+            let (data, réponse) = try await Self.session.data(from: url)
             guard (réponse as? HTTPURLResponse)?.statusCode == 200 else { return nil }
             let dto = try JSONDecoder().decode(OpenMeteoDTO.self, from: data)
             guard let ressentieMax = dto.daily.apparent_temperature_max.first else { return nil }
