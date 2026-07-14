@@ -66,6 +66,10 @@ dédup/pierres tombales d'import, bilan, insights…).
 Lier le package local `WelloKit` au target, capability HealthKit, et clés Info.plist :
 `NSHealthShareUsageDescription`, `NSHealthUpdateUsageDescription`,
 `NSLocationWhenInUseUsageDescription`. Détails dans le README.
+Rafraîchissement en arrière-plan : cocher **Background Delivery** sous la capability HealthKit
+(entitlement `com.apple.developer.healthkit.background-delivery`) sur la cible app iPhone.
+Sans ça, `HealthKitService.observerEnArrièrePlan` s'exécute sans effet — l'app fonctionne comme
+avant (recalcul à l'ouverture), mais une séance du soir ne relève plus l'objectif toute seule.
 Cible WidgetExtension `WelloWidget` : membership des 3 `@Model` + `WelloShared.swift`, lien WelloKit,
 capability App Group `group.Life.Wello` sur l'app ET l'extension.
 Surfaces d'entrée (Siri / Spotlight / Bouton Action / Control Widget) : `AddWaterIntent.swift` a été
@@ -101,8 +105,7 @@ exigent d'ajouter les assets `AppIcon-Aurore/-Menthe/-Crepuscule` + de déclarer
 Localisation : langue de base **fr** + **7 langues** traduites (en, es, de, it, pt-BR, ja, zh-Hans).
 `knownRegions` (pbxproj) contient les 8 régions. Étape manuelle : ajouter `Wello/Wello/Localizable.xcstrings`
 au target app (Target Membership), puis un build extrait automatiquement les nouvelles clés manquantes.
-Le catalogue (153 clés) est **entièrement traduit** dans les 7 langues (152 clés × 7 ; la clé vide `""`
-est ignorée). Les littéraux SwiftUI sont des `LocalizedStringKey` (aucun `String(localized:)` requis).
+Le catalogue (343 clés) est **entièrement traduit** dans les 7 langues (la clé vide `""` est ignorée). Les littéraux SwiftUI sont des `LocalizedStringKey` (aucun `String(localized:)` requis).
 Une clé sans traduction retombe sur le français (fallback sûr). Après ajout de clés, penser à compléter
 les 7 langues (une clé partiellement traduite retombe sur le fr pour les langues manquantes).
 

@@ -39,7 +39,7 @@ cd WelloKit && swift test
 ## Permissions
 
 Activer la capability **HealthKit** sur le target (Signing & Capabilities ▸ + Capability ▸
-HealthKit), et renseigner dans l'Info.plist du target :
+HealthKit), y cocher **Background Delivery**, et renseigner dans l'Info.plist du target :
 
 - `NSHealthShareUsageDescription` — lecture des séances et de l'énergie active.
 - `NSHealthUpdateUsageDescription` — écriture des prises d'eau dans Santé.app.
@@ -47,6 +47,18 @@ HealthKit), et renseigner dans l'Info.plist du target :
 
 Les notifications sont demandées à l'usage. **Tous les refus sont gérés** : l'app reste
 pleinement utilisable en saisie manuelle (activité = 0, météo = bonus 0, pas de rappels).
+
+**Arrière-plan** : Wello observe les séances et les prises d'eau externes via `HKObserverQuery` +
+background delivery. Une séance terminée relève l'objectif, replanifie les rappels et rafraîchit
+widget et Live Activity sans que l'app soit ouverte. Le réveil n'interroge pas le GPS (météo lue
+en cache) : hors premier plan, un fix est lent et le réveil doit être acquitté rapidement.
+
+## Effacer ses données
+
+Profil ▸ **Confidentialité** ▸ « Effacer toutes mes données » : supprime prises, historique,
+objectifs, profil et caches locaux ; au choix, aussi les prises d'eau écrites par Wello dans
+Santé.app (jamais celles des autres apps). Les achats Wello+ sont conservés. L'app repart sur
+l'onboarding.
 
 ## Logique de calcul
 
