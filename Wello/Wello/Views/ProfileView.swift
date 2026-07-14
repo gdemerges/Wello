@@ -12,53 +12,73 @@ struct ProfileView: View {
     @Environment(DrinkCatalog.self) private var drinks
     @Environment(ThemeStore.self) private var theme
     @State private var paywall = false
-    @State private var confirmeEffacement = false
+    @State private var effacementDemandé: PortéeEffacement?
     @State private var effacementEnCours = false
 
     private var profil: UserProfile? { profils.first }
 
-    /// Wello ne garde rien ailleurs que sur l'appareil : la remise à zéro doit donc être à portée
-    /// de main, et complète (prises, historique, profil, caches — et, au choix, les prises que
-    /// Wello a écrites dans Santé).
+    /// Les deux gestes d'effacement, volontairement distincts : repartir d'une page blanche ne
+    /// doit pas coûter un onboarding, mais tout rendre (profil compris) doit rester possible.
+    private enum PortéeEffacement: Identifiable {
+        case historique   // prises + objectifs + caches ; le profil et l'objectif survivent
+        case tout         // + le profil → retour au premier lancement
+        var id: Self { self }
+    }
+
+    /// Wello ne garde rien ailleurs que sur l'appareil : l'effacement doit donc être à portée de
+    /// main, et pouvoir aller jusqu'aux prises que Wello a écrites dans Santé.
     @ViewBuilder
     private var confidentialitéSection: some View {
         Section {
-            Button(role: .destructive) {
-                confirmeEffacement = true
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: "trash.fill")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.red)
-                        .frame(width: 30, height: 30)
-                        .background(Color.red.opacity(0.15), in: Circle())
-                        .accessibilityHidden(true)
-                    Text("Effacer toutes mes données")
-                        .font(.system(.body, design: .rounded))
-                    Spacer()
-                    if effacementEnCours { ProgressView() }
-                }
-            }
-            .disabled(effacementEnCours)
+            ligneEffacement("Effacer mon historique", icon: "clock.arrow.circlepath",
+                            portée: .historique)
+            ligneEffacement("Tout effacer et repartir de zéro", icon: "trash.fill", portée: .tout)
         } header: {
             enTête("Confidentialité")
         } footer: {
-            Text("Wello est 100 % local : rien n'est envoyé sur un serveur, aucun compte. Tout supprimer efface définitivement ton profil, tes prises et ton historique de cet appareil.")
+            Text("Wello est 100 % local : rien n'est envoyé sur un serveur, aucun compte. Effacer ton historique garde ton profil et ton objectif du jour ; tout effacer supprime aussi ton profil et te ramène au premier lancement.")
                 .font(.welloLégendeMini)
         }
         .listRowBackground(WelloTheme.card)
     }
 
-    /// Remise à zéro : le store efface SwiftData + caches, annule les rappels et termine la Live
-    /// Activity ; l'app retombe alors sur l'onboarding (profil vierge, sexe non renseigné).
-    private func effacer(dansSantéAussi: Bool) {
+    private func ligneEffacement(_ titre: LocalizedStringKey, icon: String,
+                                 portée: PortéeEffacement) -> some View {
+        Button(role: .destructive) {
+            effacementDemandé = portée
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.red)
+                    .frame(width: 30, height: 30)
+                    .background(Color.red.opacity(0.15), in: Circle())
+                    .accessibilityHidden(true)
+                Text(titre)
+                    .font(.system(.body, design: .rounded))
+                Spacer()
+                if effacementEnCours { ProgressView() }
+            }
+        }
+        .disabled(effacementEnCours)
+    }
+
+    /// Efface selon la portée choisie. En « historique », le store recalcule aussitôt l'objectif
+    /// du jour (le profil est intact) ; en « tout », l'app retombe sur l'onboarding.
+    private func effacer(_ portée: PortéeEffacement, dansSantéAussi: Bool) {
         effacementEnCours = true
         Task {
-            await store.effacerToutesLesDonnées(dansSantéAussi: dansSantéAussi)
+            switch portée {
+            case .historique: await store.effacerHistorique(dansSantéAussi: dansSantéAussi)
+            case .tout: await store.effacerToutesLesDonnées(dansSantéAussi: dansSantéAussi)
+            }
             effacementEnCours = false
             // String(localized:) : une Announcement prend un String — en littéral nu, elle
             // s'annoncerait en français dans les 7 autres langues.
-            AccessibilityNotification.Announcement(String(localized: "Toutes tes données ont été effacées")).post()
+            AccessibilityNotification.Announcement(
+                String(localized: portée == .tout
+                       ? "Toutes tes données ont été effacées"
+                       : "Ton historique a été effacé")).post()
         }
     }
 
@@ -317,13 +337,23 @@ struct ProfileView: View {
             .navigationTitle("Profil")
             .task { _ = store.profilCourant() }   // garantit l'existence d'un profil
             .sheet(isPresented: $paywall) { PaywallView() }
-            .confirmationDialog("Effacer toutes tes données ?", isPresented: $confirmeEffacement,
-                                titleVisibility: .visible) {
-                Button("Effacer dans Wello", role: .destructive) { effacer(dansSantéAussi: false) }
-                Button("Effacer dans Wello et Santé", role: .destructive) { effacer(dansSantéAussi: true) }
+            .confirmationDialog(effacementDemandé == .tout ? "Tout effacer et repartir de zéro ?"
+                                                           : "Effacer ton historique ?",
+                                isPresented: Binding(get: { effacementDemandé != nil },
+                                                     set: { if !$0 { effacementDemandé = nil } }),
+                                titleVisibility: .visible,
+                                presenting: effacementDemandé) { portée in
+                Button("Effacer dans Wello", role: .destructive) {
+                    effacer(portée, dansSantéAussi: false)
+                }
+                Button("Effacer dans Wello et Santé", role: .destructive) {
+                    effacer(portée, dansSantéAussi: true)
+                }
                 Button("Annuler", role: .cancel) {}
-            } message: {
-                Text("Ton profil, tes prises et tout ton historique seront supprimés définitivement. Wello repartira de zéro. Tes achats Wello+ sont conservés.")
+            } message: { portée in
+                Text(portée == .tout
+                     ? "Ton profil, tes prises et tout ton historique seront supprimés définitivement. Wello repartira au premier lancement. Tes achats Wello+ sont conservés."
+                     : "Tes prises et tout ton historique seront supprimés définitivement. Ton profil et ton objectif du jour sont conservés.")
             }
         }
     }

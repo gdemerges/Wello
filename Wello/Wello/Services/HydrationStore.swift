@@ -92,11 +92,11 @@ final class HydrationStore {
         /// Onboarding terminé (posé par `RootView` via `@AppStorage`).
         static let onboardingFait = "wello.hasOnboarded"
 
-        /// Tout ce que l'app écrit sur l'appareil hors SwiftData — hors achats et préférences
-        /// d'affichage, qui ne sont pas des données de suivi. Sert à la remise à zéro.
-        static let toutesDonnéesDeSuivi = [météoRessentie, météoAltitude, météoDate,
-                                           pierresTombales, rappelsCoupésDate, dernierPostSéance,
-                                           onboardingFait]
+        /// Les caches de suivi écrits hors SwiftData — hors achats et préférences d'affichage,
+        /// qui ne sont pas des données de suivi. Effacés par les deux gestes du Profil
+        /// (`onboardingFait` ne l'est que par la remise à zéro complète).
+        static let donnéesDeSuivi = [météoRessentie, météoAltitude, météoDate,
+                                     pierresTombales, rappelsCoupésDate, dernierPostSéance]
     }
 
     /// Durée de vie d'une pierre tombale : au-delà, l'échantillon est hors de la fenêtre d'import
@@ -532,25 +532,44 @@ final class HydrationStore {
         return clampedDayTotal(logs.reduce(0) { $0 + $1.effectiveML })
     }
 
-    /// Remise à zéro : prises, objectifs, profil et caches locaux disparaissent, les rappels sont
-    /// annulés et la Live Activity terminée (objectif redevenu nul). `dansSantéAussi` supprime en
-    /// plus les prises d'eau que **Wello** a écrites dans Santé.app (jamais celles des autres
-    /// apps). Les achats Wello+ et les préférences d'affichage survivent : ce ne sont pas des
-    /// données de suivi. L'app repart sur l'onboarding (profil vierge, sexe non renseigné).
+    /// Efface le **suivi** : prises, objectifs et caches locaux. Le profil (sexe, réglages,
+    /// montants rapides) survit — l'objectif du jour est donc immédiatement recalculé et l'app
+    /// reste utilisable telle quelle, sans repasser par l'onboarding. C'est le geste courant
+    /// (« je repars d'une page blanche »), distinct de la remise à zéro complète.
+    func effacerHistorique(dansSantéAussi: Bool) async {
+        await effacer(profilCompris: false, dansSantéAussi: dansSantéAussi)
+    }
+
+    /// Remise à zéro complète : le suivi **et** le profil. L'app repart sur l'onboarding (sexe non
+    /// renseigné). C'est le geste « je rends l'appareil / je quitte Wello ». Les achats Wello+ et
+    /// les préférences d'affichage survivent : ce ne sont pas des données de suivi.
     func effacerToutesLesDonnées(dansSantéAussi: Bool) async {
+        await effacer(profilCompris: true, dansSantéAussi: dansSantéAussi)
+    }
+
+    /// `dansSantéAussi` supprime les prises d'eau que **Wello** a écrites dans Santé.app — jamais
+    /// celles des autres apps, que HealthKit protège de toute façon.
+    private func effacer(profilCompris: Bool, dansSantéAussi: Bool) async {
         tâcheRecalcul?.cancel()
         if dansSantéAussi { await healthKit.supprimerToutesNosPrisesEau() }
 
+        // Les prises saisies dans d'AUTRES apps restent dans Santé (ce ne sont pas les nôtres à
+        // supprimer) : sans pierres tombales, le prochain refresh les réimporterait aussitôt et
+        // l'historique « effacé » se repeuplerait sous les yeux de l'utilisateur.
+        let externesDuJour = await healthKit.prisesEauExternes(
+            depuis: Calendar.current.startOfDay(for: .now))
+
         try? modelContext.delete(model: HydrationLog.self)
         try? modelContext.delete(model: DailyGoal.self)
-        try? modelContext.delete(model: UserProfile.self)
+        if profilCompris { try? modelContext.delete(model: UserProfile.self) }
 
         let defaults = UserDefaults.standard
-        for clé in Clés.toutesDonnéesDeSuivi { defaults.removeObject(forKey: clé) }
+        for clé in Clés.donnéesDeSuivi { defaults.removeObject(forKey: clé) }
+        if profilCompris { defaults.removeObject(forKey: Clés.onboardingFait) }
+        for prise in externesDuJour { ajouterPierreTombale(prise.id) }
 
         météoCache = nil
         dernierRefresh = nil
-        breakdown = nil
         météoIndisponible = false
         rappelsCoupésAujourdhui = false
         étatServices = ÉtatServices()
@@ -558,8 +577,15 @@ final class HydrationStore {
         étatSources = ÉtatSourcesHydratation()
 
         await notifications.annulerTout()
-        // Objectif redevenu nul : la Live Activity se termine, widgets et Watch repartent à vide.
-        propagerChangement()
+
+        if profilCompris {
+            // Plus d'objectif : la Live Activity se termine, widgets et Watch repartent à vide.
+            breakdown = nil
+            propagerChangement()
+        } else {
+            // Le profil est intact : on recrée aussitôt l'objectif du jour (et ses rappels).
+            await refreshToday(force: true)
+        }
     }
 
     /// Recharge toutes les timelines de widget : à appeler après tout changement du consommé
