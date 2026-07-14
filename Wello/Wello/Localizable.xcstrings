@@ -16161,6 +16161,53 @@
           }
         }
       }
+    },
+    "Wello donne un repère fondé sur les apports de référence EFSA. Ce n'est pas un dispositif médical et cela ne remplace pas l'avis d'un professionnel de santé." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wello liefert einen Richtwert auf Basis der EFSA-Referenzwerte. Es ist kein Medizinprodukt und ersetzt nicht den Rat einer medizinischen Fachperson."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wello gives you a benchmark based on EFSA reference intakes. It is not a medical device and does not replace the advice of a health professional."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wello ofrece una referencia basada en las ingestas de referencia de la EFSA. No es un dispositivo médico y no sustituye el consejo de un profesional sanitario."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wello fornisce un riferimento basato sulle assunzioni di riferimento EFSA. Non è un dispositivo medico e non sostituisce il parere di un professionista sanitario."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wello は EFSA の基準摂取量に基づく目安を示すものです。医療機器ではなく、医療専門家の助言に代わるものではありません。"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Wello oferece uma referência baseada nas ingestões de referência da EFSA. Não é um dispositivo médico e não substitui a orientação de um profissional de saúde."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wello 提供的是基于 EFSA 参考摄入量的参考值。它不是医疗器械，也不能替代医疗专业人士的建议。"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

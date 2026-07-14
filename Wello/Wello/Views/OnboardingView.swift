@@ -201,6 +201,14 @@ struct OnboardingView: View {
                     .multilineTextAlignment(.leading)
             }
             .padding(.horizontal, 4)
+
+            // Wello propose grossesse, allaitement et lithiase rénale : le cadre non médical doit
+            // être posé dès l'entrée, pas seulement au fond de l'écran Méthode.
+            Text("Wello donne un repère fondé sur les apports de référence EFSA. Ce n'est pas un dispositif médical et cela ne remplace pas l'avis d'un professionnel de santé.")
+                .font(.welloLégendeMini2)
+                .foregroundStyle(WelloTheme.inkSoft)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 4)
         }
         .padding(.horizontal, 28)
     }

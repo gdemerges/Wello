@@ -11,10 +11,16 @@ d'analyse tiers.
 
 - **Tes prises d'hydratation, ton profil et tes objectifs** sont stockés localement sur ton
   appareil (base de données SwiftData). Ils ne sont jamais envoyés sur Internet.
-- **Santé (HealthKit)**, si tu l'autorises : Wello lit tes données d'hydratation et d'énergie
-  active pour affiner ton objectif, et peut écrire tes prises d'eau dans l'app Santé. Ces
-  échanges se font uniquement entre Wello et l'app Santé d'Apple, sur ton appareil. Wello
-  n'exporte pas tes données de santé.
+- **Santé (HealthKit)**, si tu l'autorises : Wello lit tes séances et ton énergie active (pour
+  ajuster l'objectif à ton effort), ton analyse de sommeil (pour situer ta fenêtre d'éveil et
+  placer les rappels aux bonnes heures), ainsi que tes prises d'eau et de boissons alcoolisées
+  enregistrées par d'autres apps (pour ne pas les compter deux fois). Wello écrit tes prises
+  d'eau dans l'app Santé. Ces échanges se font uniquement entre Wello et l'app Santé d'Apple,
+  sur ton appareil. Wello n'exporte pas tes données de santé et ne s'en sert jamais à des fins
+  publicitaires ou de profilage.
+  Wello peut être réveillée en arrière-plan par l'app Santé lorsqu'une séance se termine ou
+  qu'une prise est ajoutée, afin de recalculer ton objectif : ce traitement reste entièrement
+  local.
 - **Localisation**, si tu l'autorises : ta position approximative sert uniquement à récupérer
   la météo locale (pour ajuster ton objectif d'hydratation par temps chaud). La position
   n'est pas conservée ni associée à ton identité.
@@ -45,8 +51,12 @@ Aucun. Wello ne partage tes données avec personne, car elles ne quittent pas to
 ## Suppression de tes données
 
 Toutes tes données vivent sur ton appareil. Désinstaller Wello les supprime définitivement.
-Les données que tu as écrites dans l'app Santé restent gérées par l'app Santé, où tu peux les
-consulter et les supprimer à tout moment.
+
+Depuis l'app, l'onglet **Profil ▸ Confidentialité** propose deux gestes : **effacer ton
+historique** (prises, objectifs et caches ; ton profil est conservé) ou **tout effacer et
+repartir de zéro** (profil compris). Les deux proposent de supprimer aussi les prises d'eau que
+Wello a écrites dans l'app Santé. Les prises enregistrées par d'autres apps restent gérées par
+l'app Santé, où tu peux les consulter et les supprimer à tout moment.
 
 ## Enfants
 
