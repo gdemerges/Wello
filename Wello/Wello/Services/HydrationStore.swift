@@ -295,10 +295,10 @@ final class HydrationStore {
         return nil
     }
 
+    /// Règle pure, testée dans WelloKit (`météoUtilisable`) : la tolérance à la journée entière
+    /// en arrière-plan est ce qui empêche un recalcul de nuit de perdre le bonus météo.
     private func météoFraîche(_ date: Date, fenêtre: TimeInterval?) -> Bool {
-        guard Calendar.current.isDate(date, inSameDayAs: .now) else { return false }
-        guard let fenêtre else { return true }   // relevé du jour, quel que soit son âge
-        return Date.now.timeIntervalSince(date) < fenêtre
+        météoUtilisable(capturéeÀ: date, maintenant: .now, fenêtre: fenêtre)
     }
 
     @discardableResult
