@@ -49,9 +49,22 @@ jobs:
       - name: xcodebuild test (WelloTests)
         run: |
           set -o pipefail
+          # Le nom/OS exact des simulateurs varie selon l'image du runner : pin « iPhone 16,OS=latest »
+          # échoue quand ce combo n'existe pas. On résout donc dynamiquement l'UDID d'un simulateur
+          # iPhone disponible (iPhone 16 de préférence, sinon n'importe quel iPhone).
+          UDID=$(xcrun simctl list devices available | awk -F '[()]' '/iPhone 16 /{print $2; exit}')
+          if [ -z "$UDID" ]; then
+            UDID=$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/{print $2; exit}')
+          fi
+          if [ -z "$UDID" ]; then
+            echo "::error::Aucun simulateur iPhone disponible sur le runner."
+            xcrun simctl list devices
+            exit 1
+          fi
+          echo "Simulateur retenu : $UDID"
           xcodebuild test \
             -project Wello/Wello.xcodeproj \
             -scheme Wello \
-            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+            -destination "id=$UDID" \
             -only-testing:WelloTests \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
